@@ -1,0 +1,13 @@
+.logo {
+  color: var(--foreground);
+  max-width: 90vw;
+  width: 20rem;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
