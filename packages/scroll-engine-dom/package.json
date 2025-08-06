@@ -1,5 +1,5 @@
 {
-  "name": "@openuji/ujse-dom",
+  "name": "@openuji/scroll-engine-dom",
   "version": "0.0.1",
   "license": "MIT",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@openuji/ujse-core": "workspace:*"
+    "@openuji/scroll-engine-core": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.1",
