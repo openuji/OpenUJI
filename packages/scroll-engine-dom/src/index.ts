@@ -9,6 +9,9 @@ import {
   ScrollDriver,
   ScrollSignal,
   ScrollDirection,
+  FrameInfo,
+  ScrollEnginePlugin,
+  ScrollEngine,
 } from "@openuji/scroll-engine-core";
 
 export function createRafScheduler(): Scheduler {
@@ -134,8 +137,13 @@ export function createDOMDriver(
 
   const write = (pos: number) => {
     ignore = true;
+
     if (target === window) {
-      window.scrollTo({ [ax.scrollToProp]: pos });
+      const p: ScrollToOptions = {
+        [ax.scrollToProp]: pos,
+        behavior: "instant",
+      };
+      window.scrollTo(p);
     } else {
       el[ax.scrollProp] = pos;
     }
@@ -180,6 +188,7 @@ export class ScrollEngineDOM {
   velocity = 0;
   direction: ScrollDirection = 0;
   private prev = 0;
+  private plugins: ScrollEnginePlugin[] = [];
 
   constructor({
     driver,
@@ -187,6 +196,7 @@ export class ScrollEngineDOM {
     animator,
     scheduler,
     infinite = false,
+    plugins = [],
   }: ScrollEngineOptions) {
     this.driver = driver;
     this.animator = animator;
@@ -199,6 +209,11 @@ export class ScrollEngineDOM {
         this.target = p;
       }),
     );
+
+    this.plugins = plugins.map((plugin) => {
+      plugin.init?.(this);
+      return plugin;
+    });
 
     inputs.forEach((mod) =>
       this.destroyers.push(mod((d) => this.applyImpulse(d))),
@@ -230,6 +245,7 @@ export class ScrollEngineDOM {
       return;
     }
     this.target = dest;
+
     this.startLoop();
   }
 
@@ -250,6 +266,23 @@ export class ScrollEngineDOM {
   //   return new ScrollTimeline({ ...opts, source, axis });
   // }
 
+  private applyPosition(next: number, dt: number) {
+    const limit = this.driver.limit();
+    this.driver.write(next);
+    this.signal.set(next, "program");
+    const info: FrameInfo = {
+      current: next,
+      target: this.target,
+      velocity: this.velocity,
+      direction: this.direction,
+      dt,
+      progress: limit ? next / limit : 0,
+    };
+    this.plugins.forEach((plugin) => {
+      plugin.onFrame?.(info);
+    });
+  }
+
   /* loop */
   private startLoop() {
     if (this.running) return;
@@ -267,20 +300,21 @@ export class ScrollEngineDOM {
       const dt = now - last; // ms since previous frame
       last = now;
 
+      const limit = this.driver.limit();
       if (this.impulse !== 0) {
-        this.target = clamp(0, this.target + this.impulse, this.driver.limit());
+        this.target = clamp(0, this.target + this.impulse, limit);
         this.impulse = 0;
       }
       const cur = this.signal.value;
       const next = this.animator.step(cur, this.target, dt);
+
       if (next === null) {
-        this.driver.write(this.target);
-        this.signal.set(this.target, "program");
+        this.applyPosition(this.target, dt);
         this.running = false;
         return;
       }
-      this.driver.write(next);
-      this.signal.set(next, "program");
+
+      this.applyPosition(next, dt);
       this.scheduler.start(step);
     };
 
@@ -300,8 +334,8 @@ export const expAnimator = (lerp = 0.1): Animator => {
   };
 };
 
-export const defaultScrollEngine = () =>
-  new ScrollEngineDOM({
+export const defaultScrollEngine = () => {
+  const domScroller = new ScrollEngineDOM({
     driver: createDOMDriver(window, "block"),
     inputs: [
       wheelInput({ element: document.body }),
@@ -309,4 +343,27 @@ export const defaultScrollEngine = () =>
     ],
     animator: expAnimator(0.1),
     scheduler: createRafScheduler(),
+    plugins: [snapPlugin()],
   });
+
+  return domScroller;
+};
+
+function snapPlugin(grid = 800): ScrollEnginePlugin {
+  let scroller: ScrollEngine;
+
+  return {
+    name: "snap",
+    init(s: ScrollEngine) {
+      scroller = s;
+    },
+
+    onFrame({ target, velocity, current }) {
+      const snap = Math.round(target / grid) * grid;
+      const diff = Math.abs((current || 0) - snap);
+      if (Math.abs(velocity) < 0.2 && diff < 200) {
+        if (snap !== target) scroller.scrollTo(snap); // smooth
+      }
+    },
+  };
+}

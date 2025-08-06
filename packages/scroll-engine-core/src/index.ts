@@ -10,6 +10,7 @@ export const modulo = (v: number, l: number) => ((v % l) + l) % l;
 /* -------------------------------------------------------------------------- */
 
 export type Origin = "user" | "program" | "momentum";
+
 export class ScrollSignal {
   private _value = 0;
   private listeners = new Set<(pos: number, origin: Origin) => void>();
@@ -27,17 +28,48 @@ export class ScrollSignal {
   }
 }
 
+/**
+ *
+ */
+export interface ScrollEngine {
+  scroll: number;
+  progress: number;
+  scrollTo(value: number, immediate?: boolean): void;
+}
 /* -------------------------------------------------------------------------- */
-/*  Scheduler & Animator                                                      */
+/*  Scheduler & Animator & Plugin                                                      */
 /* -------------------------------------------------------------------------- */
 
+export interface FrameInfo {
+  /** scroll position actually written this frame */
+  current: CurrentPosition;
+  /** goal we are still easing toward */
+  target: number;
+  /** px / ms calculated from previous frame → now */
+  velocity: number;
+  /** −1 ↓  0 ↔  +1 ↑ */
+  direction: ScrollDirection;
+  /** elapsed time since last frame (ms) */
+  dt: number;
+  /** 0–1 convenience value */
+  progress: number;
+}
 export interface Scheduler {
   start(cb: (t: number) => void): number;
   stop(h?: number): void;
 }
 
+export type CurrentPosition = number | null;
 export interface Animator {
-  step(current: number, target: number, dt: number): number | null;
+  step(current: number, target: number, dt: number): CurrentPosition;
+}
+
+export interface ScrollEnginePlugin {
+  name: string;
+  init?(scroller: ScrollEngine): void;
+  onImpulse?(impulse: number, origin: Origin): number | void;
+  onFrame?(info: FrameInfo): void;
+  destroy?(): void;
 }
 
 export interface ScrollDriver {
@@ -55,4 +87,5 @@ export interface ScrollEngineOptions {
   animator: Animator;
   scheduler: Scheduler;
   infinite?: boolean;
+  plugins?: ScrollEnginePlugin[];
 }
