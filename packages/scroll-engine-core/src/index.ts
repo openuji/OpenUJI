@@ -32,8 +32,8 @@ export class ScrollSignal {
  *
  */
 export interface ScrollEngine {
-  scroll: number;
-  progress: number;
+  // scroll: number;
+  // progress: number;
   scrollTo(value: number, immediate?: boolean): void;
 }
 /* -------------------------------------------------------------------------- */

@@ -4,7 +4,7 @@ import {
   clamp,
   ScrollEngineOptions,
   InputModule,
-  modulo,
+  // modulo,
   ScrollAxisKeyword,
   ScrollDriver,
   ScrollSignal,
@@ -15,10 +15,20 @@ import {
 } from "@openuji/scroll-engine-core";
 
 export function createRafScheduler(): Scheduler {
-  let handle = 0;
+  let handle: number | null = null;
+
   return {
-    start: (cb) => (handle = requestAnimationFrame(cb)),
-    stop: () => cancelAnimationFrame(handle),
+    start(cb) {
+      handle = requestAnimationFrame(cb);
+      return handle;
+    },
+
+    stop() {
+      if (handle !== null) {
+        cancelAnimationFrame(handle);
+        handle = null;
+      }
+    },
   };
 }
 
@@ -75,9 +85,9 @@ export const wheelInput = ({
             : 1;
       const delta = e[ax.deltaKey];
       emit(delta * mult * multiplier);
-      if (e.cancelable) e.preventDefault();
+      //if (e.cancelable) e.preventDefault();
     };
-    element.addEventListener("wheel", h, { passive: false });
+    element.addEventListener("wheel", h, { passive: true });
     return () => element.removeEventListener("wheel", h);
   };
 };
@@ -227,14 +237,20 @@ export class ScrollEngineDOM {
   }
 
   /* public accessors */
-  get scroll() {
-    const v = this.signal.value;
-    return this.infinite ? modulo(v, this.driver.limit()) : v;
-  }
-  get progress() {
-    const lim = this.driver.limit();
-    return lim === 0 ? 0 : this.scroll / lim;
-  }
+  // private laps = 0;   // number of full passes when infinite
+  // get scroll() {
+  //   const raw = this.signal.value;
+  //   if (!this.infinite) return raw;
+
+  //   const lim = this.driver.limit();
+  //   this.laps = lim ? Math.floor(raw / lim) : 0;
+  //   return modulo(raw, lim);
+  // }
+
+  // get progress() {
+  //   const lim = this.driver.limit();
+  //   return lim ? (this.signal.value / lim) : 0;
+  // }
 
   scrollTo(value: number, immediate = false) {
     const dest = clamp(0, value, this.driver.limit());
@@ -252,6 +268,7 @@ export class ScrollEngineDOM {
   destroy() {
     this.scheduler.stop();
     this.destroyers.forEach((fn) => fn());
+    this.plugins.forEach((plugin) => plugin.destroy?.());
   }
 
   /** External modules inject force via this method */
@@ -311,6 +328,7 @@ export class ScrollEngineDOM {
       if (next === null) {
         this.applyPosition(this.target, dt);
         this.running = false;
+        this.scheduler.stop();
         return;
       }
 
@@ -335,6 +353,19 @@ export const expAnimator = (lerp = 0.1): Animator => {
 };
 
 export const defaultScrollEngine = () => {
+  const buttons = document.querySelectorAll(".letter");
+  const keyframes = [
+    { transform: "translateY(0)" },
+    { transform: "translateY(-20px)" },
+  ];
+
+  const animations = [...buttons].map((pic) =>
+    pic.animate(keyframes, {
+      duration: 1000,
+      fill: "both",
+      easing: "ease-in-out",
+    }),
+  );
   const domScroller = new ScrollEngineDOM({
     driver: createDOMDriver(window, "block"),
     inputs: [
@@ -343,7 +374,7 @@ export const defaultScrollEngine = () => {
     ],
     animator: expAnimator(0.1),
     scheduler: createRafScheduler(),
-    plugins: [snapPlugin()],
+    plugins: [snapPlugin(), waapiPlugin(animations)],
   });
 
   return domScroller;
@@ -367,3 +398,23 @@ function snapPlugin(grid = 800): ScrollEnginePlugin {
     },
   };
 }
+
+export const waapiPlugin = (anims: Animation[]): ScrollEnginePlugin => {
+  const durs = anims.map((a) => a.effect?.getComputedTiming().duration || 0);
+  return {
+    name: "waapi",
+    onFrame({ progress }: FrameInfo) {
+      // Example: drive animation progress manually
+      // Each animation can be any WAAPI `Animation` whose duration > 0
+      for (const dur of durs) {
+        const a = anims[durs.indexOf(dur)];
+        if (!a) continue;
+        // Option A: use % progress of total scroll range
+        a.currentTime = progress * (dur as number);
+
+        // Option B: use px → ms mapping
+        // a.currentTime = current * PX_TO_MS /* your scale */;
+      }
+    },
+  };
+};
