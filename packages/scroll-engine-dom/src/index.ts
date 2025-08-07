@@ -236,6 +236,18 @@ export class ScrollEngineDOM {
     });
   }
 
+  addPlugin(plugin: ScrollEnginePlugin) {
+    this.plugins.push(plugin);
+    plugin.init?.(this);
+    return () => {
+      const idx = this.plugins.indexOf(plugin);
+      if (idx >= 0) {
+        this.plugins.splice(idx, 1);
+        plugin.destroy?.();
+      }
+    };
+  }
+
   /* public accessors */
   // private laps = 0;   // number of full passes when infinite
   // get scroll() {
@@ -294,6 +306,7 @@ export class ScrollEngineDOM {
       direction: this.direction,
       dt,
       progress: limit ? next / limit : 0,
+      limit,
     };
     this.plugins.forEach((plugin) => {
       plugin.onFrame?.(info);
@@ -352,29 +365,22 @@ export const expAnimator = (lerp = 0.1): Animator => {
   };
 };
 
-export const defaultScrollEngine = () => {
-  const buttons = document.querySelectorAll(".letter");
-  const keyframes = [
-    { transform: "translateY(0)" },
-    { transform: "translateY(-20px)" },
-  ];
+export type SpotAninmation = {
+  from: number;
+  to: number;
+  animation: Animation;
+};
 
-  const animations = [...buttons].map((pic) =>
-    pic.animate(keyframes, {
-      duration: 1000,
-      fill: "both",
-      easing: "ease-in-out",
-    }),
-  );
+export const defaultScrollEngine = () => {
   const domScroller = new ScrollEngineDOM({
     driver: createDOMDriver(window, "block"),
     inputs: [
       wheelInput({ element: document.body }),
-      touchInput({ element: document.body }),
+      touchInput({ element: document.body, multiplier: 2 }),
     ],
     animator: expAnimator(0.1),
     scheduler: createRafScheduler(),
-    plugins: [snapPlugin(), waapiPlugin(animations)],
+    plugins: [snapPlugin()],
   });
 
   return domScroller;
@@ -399,18 +405,26 @@ function snapPlugin(grid = 800): ScrollEnginePlugin {
   };
 }
 
-export const waapiPlugin = (anims: Animation[]): ScrollEnginePlugin => {
-  const durs = anims.map((a) => a.effect?.getComputedTiming().duration || 0);
+export const waapiPlugin = (anims: SpotAninmation[]): ScrollEnginePlugin => {
+  const as = anims.map((a) => ({
+    ...a,
+    dur: a.animation.effect?.getComputedTiming().duration || 0,
+  }));
   return {
     name: "waapi",
-    onFrame({ progress }: FrameInfo) {
+    onFrame({ current }: FrameInfo) {
       // Example: drive animation progress manually
       // Each animation can be any WAAPI `Animation` whose duration > 0
-      for (const dur of durs) {
-        const a = anims[durs.indexOf(dur)];
-        if (!a) continue;
+      for (const _a of as) {
         // Option A: use % progress of total scroll range
-        a.currentTime = progress * (dur as number);
+
+        if (!current) continue;
+
+        const progress = (current - _a.from) / (_a.to - _a.from);
+
+        _a.animation.currentTime = progress * (_a.dur as number);
+        // Note: if you want to use px → ms mapping, you can use:
+        // a.currentTime = (progress * dur) / PX_TO_MS;
 
         // Option B: use px → ms mapping
         // a.currentTime = current * PX_TO_MS /* your scale */;
