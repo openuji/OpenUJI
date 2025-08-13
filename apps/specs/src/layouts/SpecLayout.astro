@@ -1,0 +1,48 @@
+---
+export interface Props {
+  title: string
+  showHeader?: boolean
+  showFooter?: boolean
+}
+const { title, showHeader = true, showFooter = true } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title}</title>
+
+    <!-- Primer + your overrides -->
+    <link rel="stylesheet" href="/_primer.css" />
+    <link rel="stylesheet" href="/primer-overrides.css" />
+
+    
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body class="markdown-body">
+    {showHeader && (
+      <header class="p-3 px-4 border-bottom">
+        <div class="container-xl d-flex items-center">
+          <a href="/" class="h4 m-0">OpenUJI Specs</a>
+          <nav class="ml-auto">
+            <a class="mr-3" href="/specs/ujse/1.0/">UJSE 1.0</a>
+            <!-- add more nav items -->
+          </nav>
+        </div>
+      </header>
+    )}
+
+    <main class="container-xl my-6">
+      <slot />
+    </main>
+
+    {showFooter && (
+      <footer class="border-top py-6 mt-8">
+        <div class="container-xl f6 color-fg-muted">
+          © {new Date().getFullYear()} OpenUJI — Drafts, subject to change.
+        </div>
+      </footer>
+    )}
+  </body>
+</html>

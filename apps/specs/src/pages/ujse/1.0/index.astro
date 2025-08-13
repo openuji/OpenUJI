@@ -1,0 +1,20 @@
+---
+import SpecLayout from "@/layouts/SpecLayout.astro";
+import { Speculator } from "@openuji/speculator";
+import fs from "node:fs/promises";
+
+const specFileUrl = new URL("../../../../../../spec/ujse/1.0-draft/index.spec.html", import.meta.url);
+const specHtml = await fs.readFile(specFileUrl, "utf8");
+
+const baseUrl = new URL("./", specFileUrl).toString();
+const speculator = new Speculator({baseUrl});
+const html = await speculator.renderHTML(specHtml);
+
+
+---
+
+<SpecLayout title="UJSE 1.0">
+  <!-- everything below is just structural shells that pull content from /spec -->
+  <div set:html={html} data-format="html" />
+
+</SpecLayout>
