@@ -1,0 +1,7 @@
+{
+  "name": "openuji-spec",
+  "compatibility_date": "2025-08-14",
+  "assets": {
+    "directory": "./dist"
+  }
+}

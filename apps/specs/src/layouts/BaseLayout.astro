@@ -1,0 +1,33 @@
+---
+export interface Props {
+  title: string
+  className?: string
+  
+}
+const { title, className } = Astro.props;
+
+import '@/styles/main.scss';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title}</title>
+
+    <!-- Primer + your overrides -->
+    <!-- <link rel="stylesheet" href="/_primer.css" /> -->
+    <!-- <link rel="stylesheet" href="/primer-overrides.css" />  -->
+
+    
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body class={className || ''}>
+    <slot />  
+     <footer class="border-top py-6 mt-8">
+        <div class="container-xl f6 color-fg-muted">
+          © {new Date().getFullYear()} OpenUJI — Drafts, subject to change.
+        </div>
+      </footer>
+  </body>
+</html>

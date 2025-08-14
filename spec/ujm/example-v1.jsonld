@@ -1,0 +1,77 @@
+{
+  "@context": {
+    "@version": 1.1,
+
+    "@vocab": "https://openuji.org/ns/ujm#",
+
+    "id": "@id",
+    "type": "@type",
+
+    "ujm": "https://openuji.org/ns/ujm#",
+    "schema": "https://schema.org/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "name": "schema:name",
+    "description": "schema:description",
+    "alternateName": "schema:alternateName",
+    "identifier": "schema:identifier",
+    "url": { "@id": "schema:url", "@type": "@id" },
+    "image": { "@id": "schema:image", "@type": "@id" },
+
+    "license": { "@id": "dcterms:license", "@type": "@id" },
+    "creator": { "@id": "dcterms:creator", "@type": "@id" },
+    "contributor": { "@id": "dcterms:contributor", "@type": "@id" },
+    "publisher": { "@id": "dcterms:publisher", "@type": "@id" },
+    "created": { "@id": "dcterms:created", "@type": "xsd:dateTime" },
+    "modified": { "@id": "dcterms:modified", "@type": "xsd:dateTime" },
+
+    "wasGeneratedBy": { "@id": "prov:wasGeneratedBy", "@type": "@id" },
+    "wasDerivedFrom": { "@id": "prov:wasDerivedFrom", "@type": "@id" },
+    "wasAttributedTo": { "@id": "prov:wasAttributedTo", "@type": "@id" },
+
+    "Journey": "ujm:Journey",
+    "Stage": "ujm:Stage",
+    "Step": "ujm:Step",
+    "Actor": "ujm:Actor",
+    "Persona": "ujm:Persona",
+    "Touchpoint": "ujm:Touchpoint",
+    "Channel": "ujm:Channel",
+    "Metric": "ujm:Metric",
+    "Emotion": "ujm:Emotion",
+
+    "hasStage": { "@type": "@id", "@container": "@set" },
+    "hasStep": { "@type": "@id", "@container": "@set" },
+    "nextStep": { "@type": "@id" },
+    "previousStep": { "@type": "@id" },
+    "actor": { "@type": "@id" },
+    "persona": { "@type": "@id" },
+    "touchpoint": { "@type": "@id" },
+    "channel": { "@type": "@id" },
+
+    "goal": "ujm:goal",
+    "scenario": "ujm:scenario",
+    "status": "ujm:status",
+    "position": { "@id": "ujm:position", "@type": "xsd:integer" },
+    "priority": { "@id": "ujm:priority", "@type": "xsd:integer" },
+
+    "startTime": { "@type": "xsd:dateTime" },
+    "endTime": { "@type": "xsd:dateTime" },
+    "duration": { "@type": "xsd:duration" },
+
+    "metric": "ujm:metric",
+    "metricValue": { "@id": "ujm:metricValue", "@type": "xsd:decimal" },
+    "unitText": "schema:unitText",
+    "unitCode": "schema:unitCode",
+
+    "emotion": "ujm:emotion",
+    "emotionScore": { "@id": "ujm:emotionScore", "@type": "xsd:decimal" },
+
+    "painPoint": "ujm:painPoint",
+    "opportunity": "ujm:opportunity",
+
+    "evidence": { "@type": "@id", "@container": "@set" },
+    "evidenceText": "ujm:evidenceText"
+  }
+}

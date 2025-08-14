@@ -1,0 +1,27 @@
+{
+  "@context": "https://openuji.org/contexts/ujm/v1.jsonld",
+  "id": "https://openuji.org/id/journey/1234",
+  "type": "Journey",
+  "name": "Account sign-up",
+  "hasStage": [
+    {
+      "id": "https://openuji.org/id/stage/1",
+      "type": "Stage",
+      "name": "Discover",
+      "hasStep": [
+        {
+          "id": "https://openuji.org/id/step/1-1",
+          "type": "Step",
+          "name": "Visit landing page",
+          "position": 1,
+          "actor": "https://openuji.org/id/personas/new-user",
+          "touchpoint": "https://openuji.org/id/tp/web-landing",
+          "startTime": "2025-08-01T09:00:00Z",
+          "emotionScore": 0.6
+        }
+      ]
+    }
+  ],
+  "wasGeneratedBy": "https://openuji.org/id/proc/journey-builder",
+  "license": "https://creativecommons.org/licenses/by/4.0/"
+}

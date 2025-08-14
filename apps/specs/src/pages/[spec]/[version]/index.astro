@@ -1,0 +1,33 @@
+---
+import SpecLayout from "@/layouts/SpecLayout.astro";
+import { renderSpecFromFile } from "@/lib/speculator";
+import { listSpecs } from "@/lib/spec-index";
+
+export async function getStaticPaths() {
+  // Add more products here if needed (or discover them similarly)
+  const specs = await listSpecs();
+  return specs.map(({ spec, version, indexPath }) => ({
+    params: { spec, version },
+    props: { indexPath, spec, version }
+  }));
+}
+
+const { indexPath, spec, version } = Astro.props;
+
+let html = '';
+try {
+  const result = await renderSpecFromFile(indexPath);
+  html = result.html;
+  if (result.warnings?.length) {
+    console.warn(`[Speculator] ${spec}@${version}`, result.warnings);
+  }
+} catch (err) {
+  console.error(`[Speculator] Error rendering ${spec}@${version}`, err);
+  Astro.response.status = 404;
+  html = `<article><h1>Spec not found</h1><p>Missing: ${indexPath}</p></article>`;
+}
+---
+
+<SpecLayout title={`${spec.toUpperCase()} ${version}`}>
+  <div set:html={html} data-format="html" />
+</SpecLayout>

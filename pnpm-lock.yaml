@@ -83,8 +83,8 @@ importers:
         version: 5.12.9(@types/node@22.15.3)(@vercel/blob@1.0.2)(rollup@4.46.2)(sass@1.90.0)(typescript@5.8.3)(yaml@2.8.0)
     devDependencies:
       '@openuji/speculator':
-        specifier: ^0.2.0
-        version: 0.2.0(linkedom@0.18.11)(typescript@5.8.3)
+        specifier: ^0.3.0
+        version: 0.3.0(linkedom@0.18.11)(typescript@5.8.3)
       '@primer/css':
         specifier: ^22.0.2
         version: 22.0.2(@primer/primitives@11.1.0)
@@ -1047,8 +1047,8 @@ packages:
   '@openuji/scroll-engine-dom@0.0.2':
     resolution: {integrity: sha512-A1IJuq1lFcVhE7Xzp9pgWOcu1P+5+6VY8BCEL2Ai5n4uhfLSpE2EoQI8fETFouxE8mPkn87NLUDrPGXl8l98ag==}
 
-  '@openuji/speculator@0.2.0':
-    resolution: {integrity: sha512-P0rURqR/t1ATOj1rDhheqIOZcMVO4Iia74NbShLmwFP9Ybyw4uhllVT3aRR9hAvpD/HawObT79OJrh/X1obRnQ==}
+  '@openuji/speculator@0.3.0':
+    resolution: {integrity: sha512-Qp4ps3wcTB/Ve//Gt0bYsRh4OxnAiIZRPX0JWNPGY5EnTkbHsLTA7j2feFLi2uUjUdrntKBbSskwl/bCkFCPtw==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       linkedom: '>=0.18.0'
@@ -5654,7 +5654,7 @@ snapshots:
     dependencies:
       '@openuji/scroll-engine-core': 0.0.1
 
-  '@openuji/speculator@0.2.0(linkedom@0.18.11)(typescript@5.8.3)':
+  '@openuji/speculator@0.3.0(linkedom@0.18.11)(typescript@5.8.3)':
     dependencies:
       markdown-it: 14.1.0
       typescript: 5.8.3

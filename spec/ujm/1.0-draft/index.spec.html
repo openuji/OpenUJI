@@ -1,0 +1,564 @@
+  <section id="abstract">
+    <p>
+      This specification defines <dfn>UJM</dfn> (User Journey Mapping), a data model and serialization for describing
+      user journeys as graphs of <a>Step</a>s connected by <a>Transition</a>s, optionally grouped into <a>Phase</a>s
+      and <a>Session</a>s. It provides a JSON-LD context for semantic interoperability and an illustrative JSON Schema.
+    </p>
+  </section>
+
+  <section id="sotd">
+    <p>
+      This Editor’s Draft incorporates corrections to JSON-LD keyword aliasing, clarifies Channel/Touchpoint semantics,
+      and introduces an optional <a>CallStep</a> mechanism for nested journeys without cross-graph transitions.
+    </p>
+  </section>
+
+  <section id="conformance">
+    <p>
+      The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>,
+      and <em class="rfc2119">MAY</em> are to be interpreted as described in <a data-cite="RFC2119"></a>.
+    </p>
+  </section>
+
+  <section id="data-model" class="normative">
+    <h2>Data Model</h2>
+
+    <section>
+      <h3>Core classes</h3>
+
+      <section>
+        <h4><dfn>ujm:Journey</dfn></h4>
+        <table class="simple">
+          <thead><tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>1</td><td>IRI of the journey.</td></tr>
+            <tr><td><code>type</code></td><td>1..*</td><td><em class="rfc2119">MUST</em> include <code>ujm:Journey</code>.</td></tr>
+            <tr><td><code>title</code></td><td>1</td><td>Human-readable.</td></tr>
+            <tr><td><code>goal</code></td><td>0..1</td><td>Free text.</td></tr>
+            <tr><td><code>created</code>, <code>modified</code></td><td>0..1 each</td><td>ISO 8601 date-time.</td></tr>
+            <tr><td><code>personas</code></td><td>0..*</td><td>Array of <a>Persona</a>.</td></tr>
+            <tr><td><code>tags</code></td><td>0..*</td><td>Array of strings.</td></tr>
+            <tr><td><code>steps</code></td><td>1..*</td><td>Array of <a>Step</a> (and optionally <a>CallStep</a>).</td></tr>
+            <tr><td><code>transitions</code></td><td>0..*</td><td>Array of <a>Transition</a>s (intra-journey only).</td></tr>
+            <tr><td><code>phases</code>, <code>sessions</code></td><td>0..*</td><td>Grouping via <a>StepRef</a>.</td></tr>
+            <tr><td><code>start</code>, <code>end</code></td><td>0..1 each</td><td>IRI of Step within this Journey.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h4><dfn>ujm:Step</dfn></h4>
+        <table class="simple">
+          <thead><tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code>, <code>type</code>, <code>name</code></td><td>1, 1..*, 1</td><td><code>type</code> includes <code>ujm:Step</code>.</td></tr>
+            <tr><td><code>description</code></td><td>0..1</td><td>Free text.</td></tr>
+            <tr><td><code>touchpoint</code></td><td>0..1</td><td>IRI to a <a>Touchpoint</a> node or an external URL.</td></tr>
+            <tr><td><code>channel</code></td><td>0..1</td><td>Controlled term via <code>@vocab</code> (e.g., <code>ujm:Web</code>).</td></tr>
+            <tr><td><code>persona</code></td><td>0..1</td><td>IRI of a <a>Persona</a>.</td></tr>
+            <tr><td><code>emotions</code></td><td>0..*</td><td>Array of <a>Emotion</a>.</td></tr>
+            <tr><td><code>metrics</code></td><td>0..*</td><td>Array of <a>Metric</a>.</td></tr>
+            <tr><td><code>preconditions</code>, <code>postconditions</code></td><td>0..*</td><td>Model assumptions/outcomes.</td></tr>
+            <tr><td><code>timestamp</code>, <code>duration</code></td><td>0..1 each</td><td>ISO date-time; ISO 8601 duration.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h4><dfn>ujm:Transition</dfn></h4>
+        <p>
+          Connects two Steps within the same Journey. <em class="rfc2119">MUST</em> resolve to Step IRIs defined in
+          <code>steps</code> of the same Journey.
+        </p>
+        <table class="simple">
+          <thead><tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>from</code>, <code>to</code></td><td>1 each</td><td>IRI of Steps in this Journey.</td></tr>
+            <tr><td><code>label</code></td><td>0..1</td><td>Outcome label (e.g., <code>success</code>, <code>retry</code>).</td></tr>
+            <tr><td><code>probability</code></td><td>0..1</td><td>0..1.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h4><dfn>ujm:Phase</dfn>, <dfn>ujm:Session</dfn>, and <dfn>ujm:StepRef</dfn></h4>
+        <p>Phases and Sessions group Steps using <code>members</code> of type <a>StepRef</a>.</p>
+      </section>
+
+      <section>
+        <h4><dfn>ujm:Channel</dfn></h4>
+        <p>
+          Controlled term (e.g., <code>ujm:Web</code>, <code>ujm:MobileApp</code>, <code>ujm:Phone</code>,
+          <code>ujm:InPerson</code>, <code>ujm:Email</code>, <code>ujm:SMS</code>). <em class="rfc2119">MAY</em> be extended.
+          In JSON-LD, <code>channel</code> values <em class="rfc2119">SHOULD</em> be terms resolved via <code>@vocab</code>
+          (e.g., <code>"Web"</code> → <code>https://www.w3.org/ns/ujm#Web</code>).
+        </p>
+      </section>
+
+      <section>
+        <h4><dfn>ujm:Touchpoint</dfn></h4>
+        <p>
+          Properties: <code>id</code> (<em class="rfc2119">MUST</em>), <code>name</code> (<em class="rfc2119">MUST</em>),
+          <code>uri</code> (<em class="rfc2119">MAY</em>), <code>location</code> (<em class="rfc2119">MAY</em>),
+          <code>owner</code> (<em class="rfc2119">MAY</em>). A Step’s <code>touchpoint</code>
+          <em class="rfc2119">MAY</em> reference a Touchpoint node by IRI or an external URL; in JSON-LD, coerce
+          <code>touchpoint</code> to <code>@id</code>.
+        </p>
+      </section>
+
+      <section>
+        <h4><dfn>ujm:Persona</dfn>, <dfn>ujm:Emotion</dfn>, <dfn>ujm:Metric</dfn></h4>
+        <p>
+          <strong>Emotion</strong> includes optional <code>evidence</code>. <strong>Metric</strong> includes
+          <code>name</code>, <code>value</code>, optional <code>unit</code>, <code>method</code>, and
+          <code>sampleSize</code>.
+        </p>
+      </section>
+    </section>
+
+    <section id="json-ld" class="normative">
+      <h3>JSON-LD</h3>
+
+      <aside class="example" title="Context">
+        <pre class="json">{
+  "@context": {
+    "@vocab": "https://www.w3.org/ns/ujm#",
+    "schema": "https://schema.org/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "id": "@id",
+    "type": "@type",
+    "step": { "@type": "@id" },
+    "start": { "@type": "@id" },
+    "end": { "@type": "@id" },
+    "touchpoint": { "@type": "@id" },
+    "persona": { "@type": "@id" },
+    "channel": { "@type": "@vocab" }
+  }
+}</pre>
+      </aside>
+
+      <section>
+        <h3>Minimal Example</h3>
+        <aside class="example" title="Minimal UJM JSON-LD">
+<pre class="json">{
+  "@context": {
+    "@vocab": "https://www.w3.org/ns/ujm#",
+    "schema": "https://schema.org/",
+    "id": "@id",
+    "type": "@type",
+    "touchpoint": { "@type": "@id" },
+    "channel": { "@type": "@vocab" },
+    "start": { "@type": "@id" },
+    "end": { "@type": "@id" }
+  },
+  "id": "https://example.org/journeys/onboarding",
+  "type": "Journey",
+  "title": "Account Onboarding",
+  "goal": "User completes account creation and first login",
+  "created": "2025-06-01T10:15:00Z",
+  "modified": "2025-08-01T12:00:00Z",
+  "steps": [
+    {
+      "id": "https://example.org/journeys/onboarding#step1",
+      "type": "Step",
+      "name": "Visit Signup Page",
+      "channel": "Web",
+      "touchpoint": "https://example.org/signup",
+      "metrics": [{ "name": "dropoff", "value": 0.12 }]
+    },
+    {
+      "id": "https://example.org/journeys/onboarding#step2",
+      "type": "Step",
+      "name": "Submit Form",
+      "channel": "Web",
+      "metrics": [{ "name": "errors", "value": 0.07 }]
+    },
+    {
+      "id": "https://example.org/journeys/onboarding#step3",
+      "type": "Step",
+      "name": "Confirm Email",
+      "channel": "Email"
+    }
+  ],
+  "transitions": [
+    { "from": "https://example.org/journeys/onboarding#step1", "to": "https://example.org/journeys/onboarding#step2", "label": "proceed" },
+    { "from": "https://example.org/journeys/onboarding#step2", "to": "https://example.org/journeys/onboarding#step3", "label": "proceed" }
+  ],
+  "start": "https://example.org/journeys/onboarding#step1",
+  "end": "https://example.org/journeys/onboarding#step3"
+}</pre>
+        </aside>
+      </section>
+
+      <section>
+        <h3>Adding Phases and Sessions without duplicating Steps</h3>
+        <aside class="example" title="Phases and Sessions">
+<pre class="json">{
+  "@context": {
+    "@vocab": "https://www.w3.org/ns/ujm#",
+    "id": "@id",
+    "type": "@type",
+    "step": { "@type": "@id" }
+  },
+  "id": "https://example.org/journeys/onboarding",
+  "type": "Journey",
+  "title": "Account Onboarding",
+  "steps": [
+    { "id": "https://example.org/journeys/onboarding#visit", "type": "Step", "name": "Visit Signup Page" },
+    { "id": "https://example.org/journeys/onboarding#submit", "type": "Step", "name": "Submit Form" },
+    { "id": "https://example.org/journeys/onboarding#confirm", "type": "Step", "name": "Confirm Email" },
+    { "id": "https://example.org/journeys/onboarding#2fa", "type": "Step", "name": "Set 2FA" }
+  ],
+  "phases": [
+    {
+      "id": "https://example.org/journeys/onboarding#phase-onboarding",
+      "type": "Phase",
+      "name": "Onboarding",
+      "order": 1,
+      "members": [
+        { "step": "https://example.org/journeys/onboarding#visit", "position": 1 },
+        { "step": "https://example.org/journeys/onboarding#submit", "position": 2, "required": true },
+        { "step": "https://example.org/journeys/onboarding#confirm", "position": 3 }
+      ]
+    },
+    {
+      "id": "https://example.org/journeys/onboarding#phase-security",
+      "type": "Phase",
+      "name": "Security Setup",
+      "order": 2,
+      "members": [
+        { "step": "https://example.org/journeys/onboarding#2fa", "position": 1, "required": true }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "id": "https://example.org/journeys/onboarding#session-first-run",
+      "type": "Session",
+      "name": "First-run",
+      "environment": { "channel": "Web", "device": "Desktop" },
+      "members": [
+        { "step": "https://example.org/journeys/onboarding#visit", "position": 1 },
+        { "step": "https://example.org/journeys/onboarding#submit", "position": 2 }
+      ]
+    },
+    {
+      "id": "https://example.org/journeys/onboarding#session-recovery",
+      "type": "Session",
+      "name": "Recovery",
+      "environment": { "channel": "Web" },
+      "members": [
+        { "step": "https://example.org/journeys/onboarding#confirm", "position": 1 },
+        { "step": "https://example.org/journeys/onboarding#2fa", "position": 2, "required": true }
+      ]
+    }
+  ]
+}</pre>
+        </aside>
+      </section>
+    </section>
+  </section>
+
+  <section id="nested-journeys" class="normative">
+    <h2>Nested Journeys (Proposed)</h2>
+    <p>
+      This specification defines an optional mechanism to reuse one <a>Journey</a> from within another without cross-graph
+      <a>Transition</a>s. Nesting is modeled as a special kind of <a>Step</a> that <em>calls</em> another Journey and returns a result.
+    </p>
+
+    <section>
+      <h3><dfn>ujm:CallStep</dfn></h3>
+      <p>A CallStep is a <a>Step</a> with additional properties:</p>
+      <table class="simple">
+        <thead><tr><th>Property</th><th>Cardinality</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td><code>calls</code> (Journey IRI)</td><td>1</td><td><em class="rfc2119">MUST</em> reference an existing Journey. JSON-LD: coerce to <code>@id</code>.</td></tr>
+          <tr><td><code>entry</code> (Step IRI)</td><td>0..1</td><td>Overrides callee <code>start</code> if provided; otherwise <em class="rfc2119">MUST</em> use callee <code>start</code>.</td></tr>
+          <tr><td><code>exitMap</code></td><td>0..*</td><td>Array mapping callee end labels to parent transition labels (e.g., <code>{"calleeEnd":"success","label":"success"}</code>). If absent, a single unlabeled return is assumed.</td></tr>
+          <tr><td><code>parameters</code></td><td>0..1</td><td>Arbitrary object passed as runtime hints to the callee (e.g., channel, experiment).</td></tr>
+          <tr><td><code>returns</code></td><td>0..1</td><td>Arbitrary object for callee outputs (informative; consumers <em class="rfc2119">SHOULD</em> ignore unknown fields).</td></tr>
+        </tbody>
+      </table>
+      <p>CallStep inherits all Step properties and participates in Phases/Sessions via <a>StepRef</a>.</p>
+    </section>
+
+    <section>
+      <h3>Constraints</h3>
+      <ul>
+        <li>Transitions in the <em>parent</em> Journey <em class="rfc2119">MUST</em> connect to the CallStep (not directly into the callee). Cross-Journey Transitions remain disallowed.</li>
+        <li>The callee Journey <em class="rfc2119">MUST</em> define <code>start</code> and <code>end</code>. If multiple ends exist, they <em class="rfc2119">SHOULD</em> carry labels that the parent references via <code>exitMap</code>.</li>
+        <li>Nesting <em class="rfc2119">MAY</em> be recursive but <em class="rfc2119">MUST</em> be acyclic at runtime.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Processing Model Additions</h3>
+      <ol>
+        <li>When encountering a CallStep, processors <em class="rfc2119">MAY</em> inline the callee Journey for visualization/analysis using the specified <code>entry</code> and <code>end</code> steps.</li>
+        <li>Aggregate metrics (duration, completion probability) from callee to the CallStep when feasible; provenance of aggregation <em class="rfc2119">SHOULD</em> be recorded.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h3>JSON-LD</h3>
+      <aside class="example" title="CallStep Example">
+<pre class="json">{
+  "@context": {
+    "@vocab": "https://www.w3.org/ns/ujm#",
+    "id": "@id",
+    "type": "@type",
+    "step": { "@type": "@id" },
+    "start": { "@type": "@id" },
+    "end": { "@type": "@id" }
+  },
+  "id": "https://example.org/journeys/checkout",
+  "type": "Journey",
+  "title": "Checkout",
+  "steps": [
+    { "id": "#cart", "type": "Step", "name": "View Cart" },
+    { "id": "#pay", "type": ["Step","CallStep"], "name": "Pay",
+      "calls": "https://example.org/journeys/payment",
+      "exitMap": [
+        { "calleeEnd": "success", "label": "success" },
+        { "calleeEnd": "failure", "label": "retry" }
+      ]
+    },
+    { "id": "#done", "type": "Step", "name": "Order Complete" }
+  ],
+  "transitions": [
+    { "from": "#cart", "to": "#pay" },
+    { "from": "#pay", "to": "#done", "label": "success" },
+    { "from": "#pay", "to": "#cart", "label": "retry" }
+  ],
+  "start": "#cart",
+  "end": "#done"
+}</pre>
+      </aside>
+    </section>
+
+    <section>
+      <h3>Schema Additions (Illustrative)</h3>
+<pre class="json">{
+  "$defs": {
+    "CallStep": {
+      "type": "object",
+      "allOf": [{ "$ref": "#/$defs/Step" }],
+      "properties": {
+        "type": {
+          "oneOf": [
+            { "const": "CallStep" },
+            { "type": "array", "items": { "type": "string" }, "contains": { "const": "CallStep" } }
+          ]
+        },
+        "calls": { "type": "string", "format": "uri" },
+        "entry": { "type": "string", "format": "uri" },
+        "exitMap": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "calleeEnd": { "type": "string" }, "label": { "type": "string" } },
+            "required": ["calleeEnd","label"]
+          }
+        },
+        "parameters": { "type": "object" },
+        "returns": { "type": "object" }
+      },
+      "required": ["calls"]
+    }
+  }
+}</pre>
+    </section>
+  </section>
+
+  <section id="profiles">
+    <h2>Profiles</h2>
+    <p class="note">
+      Profiles add constraints beyond the base model. For example, the Minimal Profile requires ≥ 1 <a>Transition</a>
+      even though the base model allows zero.
+    </p>
+  </section>
+
+  <section id="appendix-json-schema" class="appendix informative">
+    <h2>Appendix A: JSON Schema (Illustrative)</h2>
+<pre class="json">{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.w3.org/ns/ujm/schema.json",
+  "title": "User Journey Mapping 1.0",
+  "type": "object",
+  "required": ["id", "type", "title", "steps"],
+  "properties": {
+    "id": { "type": "string", "format": "uri" },
+    "type": {
+      "oneOf": [
+        { "const": "Journey" },
+        { "type": "array", "items": { "type": "string" }, "contains": { "const": "Journey" } }
+      ]
+    },
+    "title": { "type": "string" },
+    "goal": { "type": "string" },
+    "created": { "type": "string", "format": "date-time" },
+    "modified": { "type": "string", "format": "date-time" },
+    "personas": { "type": "array", "items": { "$ref": "#/$defs/Persona" } },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "steps": {
+      "type": "array",
+      "items": { "oneOf": [ { "$ref": "#/$defs/Step" }, { "$ref": "#/$defs/CallStep" } ] },
+      "minItems": 1
+    },
+    "transitions": { "type": "array", "items": { "$ref": "#/$defs/Transition" } },
+    "phases": { "type": "array", "items": { "$ref": "#/$defs/Phase" } },
+    "sessions": { "type": "array", "items": { "$ref": "#/$defs/Session" } },
+    "start": { "type": "string", "format": "uri", "description": "IRI of a Step in this Journey." },
+    "end": { "type": "string", "format": "uri", "description": "IRI of a Step in this Journey." }
+  },
+  "$defs": {
+    "Step": {
+      "type": "object",
+      "required": ["id", "type", "name"],
+      "properties": {
+        "id": { "type": "string", "format": "uri" },
+        "type": {
+          "oneOf": [
+            { "const": "Step" },
+            { "type": "array", "items": { "type": "string" }, "contains": { "const": "Step" } }
+          ]
+        },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "touchpoint": { "type": "string", "format": "uri", "description": "IRI to a Touchpoint node or external URL." },
+        "channel": { "type": "string", "description": "Controlled term; commonly 'Web','MobileApp','Phone','InPerson','Email','SMS'." },
+        "persona": { "type": "string", "format": "uri" },
+        "emotions": { "type": "array", "items": { "$ref": "#/$defs/Emotion" } },
+        "metrics": { "type": "array", "items": { "$ref": "#/$defs/Metric" } },
+        "preconditions": { "type": "array", "items": { "type": "string" } },
+        "postconditions": { "type": "array", "items": { "type": "string" } },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "duration": { "type": "string", "description": "ISO 8601 duration (e.g., 'PT30S')." }
+      }
+    },
+    "Transition": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": { "type": "string", "format": "uri", "description": "IRI of Step in same Journey." },
+        "to": { "type": "string", "format": "uri", "description": "IRI of Step in same Journey." },
+        "label": { "type": "string" },
+        "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "StepRef": {
+      "type": "object",
+      "required": ["step"],
+      "properties": {
+        "step": { "type": "string", "format": "uri" },
+        "position": { "oneOf": [ { "type": "number" }, { "type": "string" } ] },
+        "required": { "type": "boolean" },
+        "visibilityRule": {},
+        "validFrom": { "type": "string", "format": "date-time" },
+        "validTo": { "type": "string", "format": "date-time" },
+        "variant": { "type": "string" }
+      }
+    },
+    "Phase": {
+      "type": "object",
+      "required": ["id", "type", "name"],
+      "properties": {
+        "id": { "type": "string", "format": "uri" },
+        "type": {
+          "oneOf": [
+            { "const": "Phase" },
+            { "type": "array", "items": { "type": "string" }, "contains": { "const": "Phase" } }
+          ]
+        },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "order": { "oneOf": [ { "type": "number" }, { "type": "string" } ] },
+        "members": { "type": "array", "items": { "$ref": "#/$defs/StepRef" } }
+      }
+    },
+    "Session": {
+      "type": "object",
+      "required": ["id", "type", "name"],
+      "properties": {
+        "id": { "type": "string", "format": "uri" },
+        "type": {
+          "oneOf": [
+            { "const": "Session" },
+            { "type": "array", "items": { "type": "string" }, "contains": { "const": "Session" } }
+          ]
+        },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "environment": { "type": "object" },
+        "members": { "type": "array", "items": { "$ref": "#/$defs/StepRef" } }
+      }
+    },
+    "Persona": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "format": "uri" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "attributes": { "type": "object" }
+      }
+    },
+    "Touchpoint": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "format": "uri" },
+        "name": { "type": "string" },
+        "uri": { "type": "string", "format": "uri" },
+        "location": {},
+        "owner": { "type": "string" }
+      }
+    },
+    "Emotion": {
+      "type": "object",
+      "required": ["term"],
+      "properties": {
+        "term": { "type": "string" },
+        "intensity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": {}
+      }
+    },
+    "Metric": {
+      "type": "object",
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "type": "string" },
+        "value": {},
+        "unit": { "type": "string" },
+        "method": { "type": "string" },
+        "sampleSize": { "type": "number", "minimum": 0 }
+      }
+    },
+    "CallStep": {
+      "type": "object",
+      "allOf": [ { "$ref": "#/$defs/Step" } ],
+      "properties": {
+        "type": {
+          "oneOf": [
+            { "const": "CallStep" },
+            { "type": "array", "items": { "type": "string" }, "contains": { "const": "CallStep" } }
+          ]
+        },
+        "calls": { "type": "string", "format": "uri" },
+        "entry": { "type": "string", "format": "uri" },
+        "exitMap": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "calleeEnd": { "type": "string" }, "label": { "type": "string" } },
+            "required": ["calleeEnd","label"]
+          }
+        },
+        "parameters": { "type": "object" },
+        "returns": { "type": "object" }
+      },
+      "required": ["calls"]
+    }
+  }
+}</pre>
+  </section>
