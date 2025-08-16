@@ -1,0 +1,286 @@
+
+  <header>
+    <h1>User Journey Hashed Step Tracking (UJHST) 1.0 — Editor’s Draft</h1>
+    <p class="subtitle">Short name: <code>ujhst</code> • Status: Editor’s Draft </p>
+  </header>
+
+  <nav class="toc" aria-label="Table of contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#sotd">Status of This Document</a></li>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#conformance">Conformance</a></li>
+      <li><a href="#terms">Terminology</a></li>
+      <li><a href="#model">Data Model</a></li>
+      <li><a href="#client">Client Processing Model</a></li>
+      <li><a href="#transport">Transport</a></li>
+      <li><a href="#preferences">User Preference Signaling</a></li>
+      <li><a href="#server">Server Processing Model</a></li>
+      <li><a href="#interop">Interoperability and OpenTelemetry Mapping</a></li>
+      <li><a href="#privacy">Privacy Requirements</a></li>
+      <li><a href="#security">Security Considerations</a></li>
+      <li><a href="#json-schema">JSON Schema</a></li>
+    </ol>
+  </nav>
+
+  <section id="abstract">
+    <p>
+      User Journey Hashed Step Tracking (UJHST) defines a privacy‑preserving mechanism for measuring a visitor’s in‑session navigation path ("user journey") without cookies, local persistent identifiers, or device fingerprinting. UJHST relies on an ephemeral, client‑held secret seed to compute a one‑way hash chain across sequential events. Each transmitted event contains only the current hash, the previous hash, and a minimal payload. Servers stitch events into journeys by matching <code>prev → curr</code> edges without learning or inferring a stable user identifier.
+    </p>
+  </section>
+
+  <section id="sotd">
+    <p>
+      This is an Editor’s Draft and may change at any time. Feedback is welcome via the issue tracker.
+    </p>
+  </section>
+
+  <section id="intro">
+    <h2>Introduction</h2>
+    <p>
+      Traditional web analytics depend on cookies or fingerprinting to recognize visitors across page loads; these approaches raise privacy and regulatory concerns. UJHST provides a session‑scoped alternative that avoids persistent identifiers while enabling ordered in‑session path analysis for MPAs and SPAs.
+    </p>
+  </section>
+
+  <section id="conformance">
+    <h2>Conformance</h2>
+    <p>
+      The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>, and <em class="rfc2119">MAY</em> are to be interpreted as described in RFC 2119 and RFC 8174.
+    </p>
+    <p>Conformance classes:</p>
+    <ul>
+      <li><strong>Client Implementations</strong> <em class="rfc2119">MUST</em> follow <a href="#client">§ Client Processing Model</a> and <a href="#privacy">§ Privacy Requirements</a>.</li>
+      <li><strong>Server Implementations</strong> <em class="rfc2119">MUST</em> follow <a href="#server">§ Server Processing Model</a> and <a href="#privacy">§ Privacy Requirements</a>.</li>
+      <li><strong>Analytics Processors</strong> (downstream) <em class="rfc2119">MUST</em> follow <a href="#privacy">§ Privacy Requirements</a> and <a href="#interop">§ Interoperability</a>.</li>
+    </ul>
+  </section>
+
+  <section id="terms">
+    <h2>Terminology</h2>
+    <dl>
+      <dt>Client</dt><dd>User agent executing site JavaScript.</dd>
+      <dt>Server</dt><dd>First‑party collection endpoint receiving UJHST events.</dd>
+      <dt>Session</dt><dd>Single, ephemeral browsing context (tab/window lifetime).</dd>
+      <dt>Seed (<code>S</code>)</dt><dd>Cryptographically random secret generated per session and retained only client‑side.</dd>
+      <dt>Event</dt><dd>Minimal record describing a step in the journey.</dd>
+      <dt>Hash chain</dt><dd>Sequence where each event hash commits to its payload and the previous hash.</dd>
+    </dl>
+  </section>
+
+  <section id="model">
+    <h2>Data Model</h2>
+    <section id="event-object">
+      <h3>Event Object</h3>
+      <p>Each event sent by the client <em class="rfc2119">MUST</em> be a JSON object:</p>
+      <pre class="code" aria-label="Event JSON">{
+  "v": 1,
+  "curr": "&lt;hex-encoded hash&gt;",
+  "prev": "&lt;hex-encoded hash or empty string&gt;",
+  "payload": {
+    "path": "/example",
+    "event": "view",
+    "ts": 1734373200000,
+    "ref": "https://example.org"
+  }
+}</pre>
+      <p><strong>Fields</strong></p>
+      <ul>
+        <li><code>v</code> — protocol version (this spec defines <code>1</code>).</li>
+        <li><code>curr</code> — lowercase hex of current event hash <code>h<sub>i</sub></code>.</li>
+        <li><code>prev</code> — lowercase hex of previous event hash <code>h<sub>i-1</sub></code> or empty string.</li>
+        <li><code>payload</code> — minimal event data. Required members:
+          <ul>
+            <li><code>path</code> — normalized page path or route identifier; <em class="rfc2119">MUST NOT</em> include PII.</li>
+            <li><code>event</code> — event type token (e.g., <code>"view"</code>, <code>"action:signup"</code>).</li>
+            <li><code>ts</code> — Unix epoch ms; <em class="rfc2119">SHOULD</em> be rounded (see <a href="#privacy">§ Privacy Requirements</a>).</li>
+            <li><code>ref</code> — referrer origin or empty string.</li>
+          </ul>
+        </li>
+      </ul>
+      <p>Additional namespaced members under <code>payload</code> whose keys begin with <code>x-</code> are permitted; servers <em class="rfc2119">MUST</em> ignore unknown members.</p>
+    </section>
+
+    <section id="canonicalization">
+      <h3>Canonicalization</h3>
+      <p>
+        Clients <em class="rfc2119">MUST</em> canonicalize <code>payload</code> using the JSON Canonicalization Scheme (JCS) or an equivalent scheme that produces a stable byte sequence.
+      </p>
+      <pre class="code" aria-label="Hash input">CANON(payload) || "|" || prev</pre>
+    </section>
+
+    <section id="hashing">
+      <h3>Hash Algorithm</h3>
+      <p>
+        Clients <em class="rfc2119">MUST</em> compute <code>h<sub>i</sub> = HMAC_SHA256(S, CANON(payload) || "|" || h<sub>i-1</sub>)</code> and encode as lowercase hex.
+        Seeds <em class="rfc2119">MUST</em> be generated with at least 128 bits of entropy (256 bits recommended) and <em class="rfc2119">MUST NOT</em> be transmitted, persisted, or shared across sessions.
+      </p>
+      <p>Algorithm agility: Clients <em class="rfc2119">MAY</em> support additional algorithms (e.g., HMAC‑SHA‑512, BLAKE2) while continuing to support HMAC‑SHA‑256.</p>
+    </section>
+  </section>
+
+  <section id="client">
+    <h2>Client Processing Model</h2>
+    <ol>
+      <li>On session start, generate a fresh seed <code>S</code> and derive an HMAC key. A session is the lifetime of a tab/window.</li>
+      <li>For each step, construct and canonicalize <code>payload</code>, compute <code>curr</code>, transmit the event, and update <code>prev ← curr</code>.</li>
+      <li>Implementations <em class="rfc2119">MAY</em> store <code>prev</code> in <code>sessionStorage</code> to bridge navigations; they <em class="rfc2119">MUST NOT</em> write cookies, <code>localStorage</code>, IndexedDB, or other persistent state for UJHST.</li>
+      <li>Clients <em class="rfc2119">MUST</em> suppress all UJHST transmission when a Do Not Track signal is enabled (see <a href="#preferences">§ User Preference Signaling</a>).</li>
+    </ol>
+  </section>
+
+  <section id="transport">
+    <h2>Transport</h2>
+
+    <section id="tls-http">
+      <h3>TLS and HTTP Versions</h3>
+      <ul>
+        <li>All UJHST transmissions <em class="rfc2119">MUST</em> use TLS (HTTPS) with TLS 1.2 or newer. Clear‑text HTTP <em class="rfc2119">MUST NOT</em> be used in production. For development, <code>http://localhost</code> is permitted.</li>
+        <li>HTTP/1.1, HTTP/2, and HTTP/3 are supported. Implementations <em class="rfc2119">SHOULD</em> prefer HTTP/2 or HTTP/3 where available.</li>
+      </ul>
+    </section>
+
+    <section id="http-interface">
+      <h3>HTTP Interface</h3>
+      <p>
+        Method: <code>POST</code> • Headers: <code>Content-Type: application/ujhst+json</code> • Body: Event object (see <a href="#event-object">Event Object</a>).
+        Servers <em class="rfc2119">MUST</em> treat <code>curr</code> as an idempotency key. Responses: <code>204</code> on success; <code>400</code>, <code>413</code>, <code>429</code>, <code>5xx</code> as appropriate.
+      </p>
+      <div class="note">
+        <p>For reliability on unload, clients <em class="rfc2119">SHOULD</em> use <code>navigator.sendBeacon()</code>. Fallbacks include asynchronous <code>fetch()</code>.</p>
+      </div>
+    </section>
+
+    <section id="batching">
+      <h3>Batching</h3>
+      <p>
+        Clients <em class="rfc2119">MAY</em> send a batch envelope with media type <code>application/ujhst-batch+json</code> containing an array of events, ordered or unordered. Servers <em class="rfc2119">MUST</em> accept out‑of‑order events and deduplicate by <code>curr</code>.
+      </p>
+      <pre class="code" aria-label="Batch envelope">{
+  "v": 1,
+  "events": [ { /* event */ }, { /* event */ } ]
+}</pre>
+    </section>
+
+    <section id="streaming">
+      <h3>Streaming</h3>
+      <p>
+        Clients <em class="rfc2119">MAY</em> stream events using newline‑delimited JSON (NDJSON) over HTTP with <code>Content-Type: application/ujhst-ndjson</code>. For HTTP/1.1, <code>Transfer‑Encoding: chunked</code> <em class="rfc2119">MAY</em> be used; HTTP/2 and HTTP/3 provide native data framing. Each line <em class="rfc2119">MUST</em> contain a single event JSON object.
+      </p>
+    </section>
+
+    <section id="websocket">
+      <h3>WebSocket Subprotocol</h3>
+      <p>
+        Implementations <em class="rfc2119">MAY</em> use secure WebSockets (<code>wss://</code>) with a subprotocol token <code>ujhst.v1</code>. Messages are UTF‑8 JSON; both single events and batches are allowed. Clear‑text <code>ws://</code> <em class="rfc2119">MUST NOT</em> be used in production. Clients <em class="rfc2119">MUST NOT</em> open a WebSocket when a Do Not Track signal is enabled.
+      </p>
+    </section>
+  </section>
+
+  <section id="preferences">
+    <h2>User Preference Signaling</h2>
+    <ul>
+      <li>Clients <em class="rfc2119">MUST</em> suppress UJHST when <code>navigator.doNotTrack === "1"</code> or the UA signals a comparable setting.</li>
+      <li>Clients <em class="rfc2119">MUST NOT</em> transmit an explicit "DNT notice" event solely to announce Do Not Track status.</li>
+      <li>Servers <em class="rfc2119">SHOULD</em> also respect the HTTP <code>DNT: 1</code> header to disable any server‑side analytics logic.</li>
+    </ul>
+  </section>
+
+  <section id="server">
+    <h2>Server Processing Model</h2>
+
+    <section id="validation">
+      <h3>Validation</h3>
+      <p>Servers <em class="rfc2119">MUST</em> validate version, types, and formats; <em class="rfc2119">MUST</em> reject payloads containing obvious PII patterns; and <em class="rfc2119">MUST</em> index <code>prev</code> for stitching.</p>
+    </section>
+
+    <section id="storage-streaming">
+      <h3>Storage vs. Streaming</h3>
+      <ul>
+        <li>Servers <em class="rfc2119">MAY</em> store raw events as edges (<code>curr</code>, <code>prev</code>, <code>path</code>, <code>event</code>, <code>ts</code>, <code>ref</code>, <code>received_at</code>).</li>
+        <li>Servers <em class="rfc2119">MAY</em> stream events to downstream processors (e.g., OTLP/HTTP, Kafka). Controllers <em class="rfc2119">MUST</em> ensure downstream processors adhere to <a href="#privacy">§ Privacy Requirements</a> and do not perform cross‑session re‑identification.</li>
+        <li>When streaming without storage, servers <em class="rfc2119">SHOULD</em> implement back‑pressure and transient buffering to avoid data loss.</li>
+      </ul>
+    </section>
+
+    <section id="stitching">
+      <h3>Stitching</h3>
+      <p>To reconstruct a journey, start from any event with <code>prev = ""</code> and follow successive events where <code>prev</code> equals the predecessor’s <code>curr</code>, ordered by <code>ts</code> (tie‑break by <code>received_at</code>). Servers <em class="rfc2119">MUST</em> tolerate out‑of‑order arrival and ignore duplicates by <code>curr</code>.</p>
+    </section>
+  </section>
+
+  <section id="interop">
+    <h2>Interoperability and OpenTelemetry Mapping</h2>
+
+    <section id="media-types">
+      <h3>Media Types</h3>
+      <ul>
+        <li><code>application/ujhst+json</code> — single event.</li>
+        <li><code>application/ujhst-batch+json</code> — batch envelope.</li>
+        <li><code>application/ujhst-ndjson</code> — line‑delimited stream of events.</li>
+      </ul>
+    </section>
+
+    <section id="otel-mapping" class="informative">
+      <h3>OpenTelemetry (OTel) Mapping (Informative)</h3>
+      <p>UJHST events can be mapped to OTel spans for path analysis:</p>
+      <ul>
+        <li><strong>trace_id</strong> — derived from the root event’s <code>curr</code>: take the first 16 bytes (32 hex chars) of the root hash.</li>
+        <li><strong>span_id</strong> — first 8 bytes (16 hex chars) of the event’s <code>curr</code>.</li>
+        <li><strong>parent_span_id</strong> — first 8 bytes of <code>prev</code> (empty for root).</li>
+        <li><strong>name</strong> — <code>payload.event</code> or <code>payload.path</code>.</li>
+        <li><strong>start/end time</strong> — from <code>ts</code> and optional dwell (<code>x-dwellMs</code>).</li>
+        <li><strong>attributes</strong> — <code>ujhst.path</code>, <code>ujhst.ref</code>, and any <code>x-*</code> keys.</li>
+      </ul>
+      <p>When exporting to OTLP, controllers <em class="rfc2119">MUST</em> ensure the truncation does not create cross‑session linkability beyond the session chain and <em class="rfc2119">MUST NOT</em> enrich with stable user identifiers.</p>
+    </section>
+  </section>
+
+  <section id="privacy">
+    <h2>Privacy Requirements</h2>
+    <ol>
+      <li><strong>No persistent identifiers.</strong> Clients <em class="rfc2119">MUST NOT</em> use cookies, <code>localStorage</code>, IndexedDB, or other persistent state. Session bridging <em class="rfc2119">MAY</em> use <code>sessionStorage</code>.</li>
+      <li><strong>Seed confidentiality.</strong> The session seed <code>S</code> <em class="rfc2119">MUST</em> remain client‑confidential.</li>
+      <li><strong>Data minimization.</strong> <code>ts</code> <em class="rfc2119">SHOULD</em> be rounded; <code>ref</code> <em class="rfc2119">MUST</em> be origin‑only; paths <em class="rfc2119">MUST NOT</em> encode PII.</li>
+      <li><strong>Transparency and control.</strong> Deployments <em class="rfc2119">MUST</em> disclose UJHST usage and <em class="rfc2119">SHOULD</em> honor opt‑out mechanisms, including Do Not Track.</li>
+      <li><strong>Retention &amp; purpose limitation.</strong> Servers <em class="rfc2119">SHOULD</em> define short retention for raw edges and favor aggregates. Data <em class="rfc2119">MUST</em> be used solely for anonymous journey analytics and UX improvement.</li>
+    </ol>
+  </section>
+
+  <section id="security">
+    <h2>Security Considerations</h2>
+    <ul>
+      <li><strong>Collision resistance.</strong> HMAC‑SHA‑256 provides strong second‑preimage resistance; chain rewrites are infeasible without the seed.</li>
+      <li><strong>Integrity and trust.</strong> Servers cannot verify client honesty; UJHST is observational. Implement anomaly detection and rate limiting.</li>
+      <li><strong>Replay.</strong> Treat <code>curr</code> as unique; ignore duplicates.</li>
+      <li><strong>Transport.</strong> Use HTTPS/WSS; enforce modern TLS; set CSP to reduce script injection risk.</li>
+    </ul>
+  </section>
+
+  <section id="json-schema" class="appendix">
+    <h2>JSON Schema (Informative)</h2>
+    <pre class="code" aria-label="JSON Schema">{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/ujhst-event.json",
+  "title": "UJHST Event v1",
+  "type": "object",
+  "required": ["v", "curr", "prev", "payload"],
+  "properties": {
+    "v": { "const": 1 },
+    "curr": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "prev": { "type": "string", "pattern": "^$|^[0-9a-f]{64}$" },
+    "payload": {
+      "type": "object",
+      "required": ["path", "event", "ts", "ref"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "event": { "type": "string", "minLength": 1 },
+        "ts": { "type": "integer", "minimum": 0 },
+        "ref": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}</pre>
+  </section>
