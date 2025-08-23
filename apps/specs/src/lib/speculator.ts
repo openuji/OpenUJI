@@ -24,6 +24,21 @@ export async function renderSpecFromFile(relativeSpecPath: string, opts: RenderO
   });
 
   const result = await speculator.renderHTML(specHtml);
+  console.log(`Rendered spec: ${JSON.stringify(result)}`, Object.keys(result));
 
-  return { html: result.html, warnings: result.warnings };
+  type RenderResponse = {
+    sections: string;
+    warnings: string[];
+    toc?: unknown;
+    boilerplate?: unknown;
+    references?: unknown;
+  };
+
+  const response: RenderResponse = { sections: result.sections, warnings: result.warnings };
+
+  if (result.toc) response.toc = result.toc;
+  if (result.boilerplate) response.boilerplate = result.boilerplate;
+  if (result.references) response.references = result.references;
+
+  return response;
 }

@@ -14,20 +14,24 @@ export async function getStaticPaths() {
 
 const { indexPath, spec, version } = Astro.props;
 
-let html = '';
+let result: Awaited<ReturnType<typeof renderSpecFromFile>> = {
+  warnings: [],
+  toc: "",
+  sections: `<article><h1>Spec not found</h1><p>Missing: ${indexPath}</p></article>`
+};
 try {
-  const result = await renderSpecFromFile(indexPath);
-  html = result.html;
+  result = await renderSpecFromFile(indexPath);
   if (result.warnings?.length) {
     console.warn(`[Speculator] ${spec}@${version}`, result.warnings);
   }
 } catch (err) {
   console.error(`[Speculator] Error rendering ${spec}@${version}`, err);
   Astro.response.status = 404;
-  html = `<article><h1>Spec not found</h1><p>Missing: ${indexPath}</p></article>`;
+ 
 }
 ---
 
 <SpecLayout title={`${spec.toUpperCase()} ${version}`}>
-  <div set:html={html} data-format="html" />
+  <div set:html={result?.toc} data-format="html" />
+  <div set:html={result.sections} data-format="html" />
 </SpecLayout>
