@@ -37,3 +37,6 @@ yarn-error.log*
 .DS_Store
 *.pem
 apps/scroll-engine-demo
+apps/specs/design_inspiration
+index.spec.old.html
+generated_respec.html

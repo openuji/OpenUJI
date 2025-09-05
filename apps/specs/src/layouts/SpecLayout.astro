@@ -8,17 +8,17 @@ export interface Props {
 }
 const { title, showHeader = true } = Astro.props;
 ---
-<BaseLayout title={title} className="markdown-body">
+<BaseLayout title={title} >
   {showHeader && (
-      <header class="p-3 px-4 border-bottom">
-        <div class="container-xl d-flex flex-justify-between items-center">
-          <a href="/" class="h4 m-0">OpenUJI Specs</a>
+      <header>
+        <div >
+          <a href="/" >OpenUJI Specs</a>
           <div>{title}</div>
         </div>
       </header>
     )}
 
-    <main class="container-xl my-6">
+    <main >
       <slot />
     </main>
 

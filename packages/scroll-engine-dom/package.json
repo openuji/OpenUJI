@@ -4,7 +4,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "type": "module",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -18,9 +18,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "@openuji/scroll-engine-core": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.1",

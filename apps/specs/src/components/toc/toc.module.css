@@ -1,0 +1,16 @@
+@reference "tailwindcss";
+
+.TOC {
+  position: fixed;
+  transform: translate3d(-100%, 0, 0);
+  visibility: hidden;
+}
+
+@variant lg {
+  .TOC {
+    position: sticky;
+    transform: translateX(0%);
+    display: block;         /* or: translate: 0 0; opacity: 1; pointer-events: auto; */
+    visibility: visible;
+  }
+}

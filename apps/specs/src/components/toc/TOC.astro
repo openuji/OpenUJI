@@ -1,0 +1,8 @@
+---
+
+const {toc} = Astro.props;
+import styles from './TOC.module.css';
+
+---
+
+<aside  id="toc" class={styles.TOC} set:html={toc} data-format="html" />

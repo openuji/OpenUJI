@@ -1,31 +1,551 @@
-<section id="abstract" data-format="markdown">
-## Abstract
+  <section id="abstract">
+    <p>
+      This Editor’s Draft is part of the <a href="https://openuji.org" rel="noopener">Open User Journey Initiative (OUJI)</a>, whose mission is to develop practical, cross‑platform standards that improve the effectiveness and appeal of end‑to‑end user journeys. Scrolling is a foundational interaction in most journeys, yet client vendors (e.g., browsers and native UI toolkits) expose heterogeneous behaviors and apply existing W3C and platform specifications inconsistently, and those specifications do not primarily target user‑journey concerns.
+    </p>
+    <p>
+      This specification defines a <strong>platform‑agnostic</strong> scrolling model and API shape that can be implemented <em>on top of</em> current clients. It introduces clear components (Engine, Driver, Animator, Scheduler, Plugin), well‑specified algorithms (including a programmable <code>scrollTo()</code>), explicit scrolling domains (bounded, end‑unbounded, all‑unbounded, circular with shortest‑arc seams), input composition and interruptibility, and state persistence for journey continuity. The goal is to give product teams a consistent, testable foundation for modern scrolling behavior without requiring changes to underlying client engines.
+    </p>
+  </section>
 
-UJSE defines smooth scrolling and extension hooks for web engines.
-</section>
+  <section id="sotd">
+    <p>
+      This is an Editor’s Draft produced by a community process and is <strong>not</strong> on a W3C Recommendation track. It uses ReSpec for formatting and cross‑references. Feedback and change proposals are welcome via the GitHub repository linked above.
+    </p>
+  </section>
 
-<section id="sotd" data-format="markdown">
-## Status of This Document
+  <section>
+    <h2>Goals and Non‑Goals</h2>
+    <p class="note">This section is non‑normative.</p>
+    <h3>Goals</h3>
+    <ul>
+      <li><strong>User‑journey focus.</strong> Provide predictable, high‑quality scrolling that supports coherent journeys across apps and sites, including restoration across navigations and sessions.</li>
+      <li><strong>Portability.</strong> Offer host‑neutral abstractions with informative bindings for Web, iOS, Android, and other platforms.</li>
+      <li><strong>Extensibility.</strong> Support pluggable inputs, animators, and plugins; expose a programmable <code>scrollTo()</code> with per‑call customization.</li>
+      <li><strong>Accessibility.</strong> Respect platform settings (e.g., reduced‑motion), preserve keyboard/focus navigation, and align with inclusive interaction patterns.</li>
+      <li><strong>Privacy and safety.</strong> Minimize input interception and scope any persisted state appropriately.</li>
+    </ul>
 
-This is an Editor’s Draft of UJSE 0.1
-</section>
+    <h3>Non‑Goals</h3>
+    <ul>
+      <li>Not a platform or design spec: No browser/client changes; no layout/rendering/composition rules; no prescriptive UX; no low-level gesture standardization beyond mapping input.</li>
+      <li>Not about data/telemetry or exact physics: No data/virtualization or analytics specs; doesn’t replicate each client’s native physics—aims for consistent, journey-level behavior instead.</li>
+    </ul>
+  </section>
+  <section id="terminology">
+    <h2>Terminology</h2>
+    <section>
+      <h3>Core components</h3>
+      <dl>
+        <dt><dfn data-export data-lt="Engine|scroll engine">Engine</dfn></dt>
+        <dd>The abstract component that maintains per‑axis state (<a>current position</a>, <a>target position</a>), composes inputs, advances animations via an <a>Animator</a>, writes via a <a>Driver</a>, and notifies <a>Plugin</a> on each frame.</dd>
 
-<!-- Markdown chapters -->
-<section id="introduction"
-  data-include="sections/01-intro.md"
-  data-include-format="markdown">
-</section>
+        <dt><dfn data-export data-lt="Driver|scroll driver">Driver</dfn></dt>
+        <dd>A host adapter that reads the current scroll position and writes new positions, and reports extents and the <a>DomainKind</a> for an axis. Examples include DOM scrolling elements, iOS <code>UIScrollView</code>, and Android <code>RecyclerView</code>/<code>ScrollView</code>.</dd>
 
-<section id="idl">
-  <h2>WebIDL</h2>
-  <pre class="idl"
-    data-include="idl/scroll-engine.webidl"
-    data-include-format="text"></pre>
-</section>
-<section id="conformance" data-format="markdown">
-## Conformance
+        <dt><dfn data-export data-lt="Input Module|input module">Input Module</dfn></dt>
+        <dd>A module that produces scroll impulses (e.g., Pointer/Wheel, Touch/Pan, Keyboard, Controller) that an <a>Engine</a> consumes.</dd>
 
-The key words **MUST**, **SHOULD**, and **MAY** are as in RFC 2119.
-</section>
+        <dt><dfn data-export>Animator</dfn></dt>
+        <dd>Maps <var>current</var>, <var>target</var>, and <var>dt</var> into a next position, or signals completion.</dd>
+
+        <dt><dfn data-export>Scheduler</dfn></dt>
+        <dd>Supplies ticks for the Engine’s step function (e.g., display‑link, requestAnimationFrame, choreographer).</dd>
+
+        <dt><dfn data-export data-lt="Plugin|scroll plugin">Plugin</dfn></dt>
+        <dd>Observes frames and optionally transforms impulses or exposes side‑effects (e.g., scroll‑linked animations).</dd>
+
+        <dt><dfn data-export data-lt="Binding|host binding">Binding</dfn></dt>
+        <dd>A host‑specific mapping of abstract concepts to concrete platform APIs. This specification includes informative binding examples.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h3>Scrolling primitives</h3>
+      <dl>
+        <dt><dfn data-export data-lt="Axis">Axis</dfn></dt>
+        <dd>A logical direction of scrolling. Common tokens include <code>"primary"</code>/<code>"secondary"</code> or (in a Web binding) <code>"block"</code>/<code>"inline"</code>.</dd>
+
+        <dt><dfn data-export>Unit</dfn></dt>
+        <dd>The abstract measure for distances/offsets in this spec, expressed as <em>scroll units</em> (<abbr title="scroll units">su</abbr>).</dd>
+
+        <dt><dfn data-export>Viewport Extent</dfn></dt>
+        <dd>The visible span of scrollable content along an axis, in <em>su</em>.</dd>
+
+        <dt><dfn data-export>Content Extent</dfn></dt>
+        <dd>The total span of the scrollable content along an axis, in <em>su</em>.</dd>
+
+        <dt><dfn data-export>Limit</dfn></dt>
+        <dd>The maximum scrollable offset along the axis: <code>max(0, Content Extent − Viewport Extent)</code> (bounded), or the <em>period</em> for circular domains.</dd>
+
+        <dt><dfn data-export>Impulse</dfn></dt>
+        <dd>A signed delta (in <em>su</em>) applied to the target position as a result of input.</dd>
+
+        <dt><dfn data-export>Origin</dfn></dt>
+        <dd>One of <code>"user"</code>, <code>"program"</code>, or <code>"momentum"</code>, identifying the source of a change.</dd>
+
+        <dt><dfn data-export data-lt="Frame Info|frame info">Frame Info</dfn></dt>
+        <dd>An object the Engine computes each frame, containing <code>current</code>, <code>target</code>, <code>velocity</code>, <code>direction</code>, <code>dt</code>, <code>progress</code>, and <code>limit</code>.</dd>
+
+        <dt><dfn data-export>Scroll State</dfn></dt>
+        <dd>A serializable snapshot of per‑axis positions and related metadata sufficient to restore the scroll position later.</dd>
+
+        <dt><dfn data-export>Invocation Animator</dfn></dt>
+        <dd>The per‑call animator chosen by <a>ScrollTo</a> (via options or synthesized from duration/easing) that temporarily overrides the Engine’s default <a>Animator</a> for an axis.</dd>
+
+        <dt><dfn data-export>User‑Interrupt Flag</dfn></dt>
+        <dd>A boolean associated with the current <a>Invocation Animator</a> indicating whether user input may abort/override the in‑flight animation.</dd>
+
+        <dt><dfn data-export>DomainKind</dfn></dt>
+        <dd>The domain of an axis: one of <code>bounded</code>, <code>end‑unbounded</code>, <code>all‑unbounded</code>, or <code>circular</code>.</dd>
+      </dl>
+    </section>
+  </section>
+
+  <section>
+    <h2>Conformance</h2>
+    <p>
+      The keywords <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>, <em class="rfc2119">SHOULD NOT</em>, and <em class="rfc2119">MAY</em> are to be interpreted as described in <a data-cite="RFC2119"></a> and <a data-cite="RFC8174"></a>.
+    </p>
+    <p>This specification defines the following <dfn data-export>conformance classes</dfn>:</p>
+    <dl>
+      <dt><dfn data-export data-lt="Engine implementation|Engine conformance class">Engine implementation</dfn></dt>
+      <dd>Provides the run‑loop, input composition, target computation, write‑back via a <a>Driver</a>, and state persistence, according to all MUST‑level requirements that reference the <a>Engine</a>.</dd>
+
+      <dt><dfn data-export data-lt="Driver implementation|Driver conformance class">Driver implementation</dfn></dt>
+      <dd>Adapts a host scroll surface to the <a>Engine</a> by implementing <code>read</code>/<code>write</code>, reporting extents and <a>DomainKind</a>, detecting user‑initiated scrolls, and (for unbounded domains) performing invisible rebasing.</dd>
+
+      <dt><dfn data-export data-lt="Input Module implementation|Input module conformance class">Input Module implementation</dfn></dt>
+      <dd>Translates host events into impulses for a chosen axis per the requirements in this specification.</dd>
+
+      <dt><dfn data-export data-lt="Animator implementation|Animator conformance class">Animator implementation</dfn></dt>
+      <dd>Advances the current position toward the target based on elapsed time and signals completion when appropriate.</dd>
+
+      <dt><dfn data-export data-lt="Scheduler implementation|Scheduler conformance class">Scheduler implementation</dfn></dt>
+      <dd>Provides callbacks tied to the host’s presentation clock to drive the <a>Engine</a> step function.</dd>
+
+      <dt><dfn data-export data-lt="Plugin implementation|Plugin conformance class">Plugin implementation</dfn></dt>
+      <dd>Observes frames and/or transforms impulses according to the plugin model defined in this specification.</dd>
+
+      <dt><dfn data-export data-lt="Binding definition|Binding conformance class">Binding definition</dfn></dt>
+      <dd>A host‑specific mapping that normatively defines how the abstract concepts in this specification apply to a given platform.</dd>
+    </dl>
+    <p>An implementation <em>conforms</em> if it satisfies all MUST‑level requirements for each claimed conformance class.</p>
+  </section>
 
 
+  <section>
+    <h2>Abstract Interfaces</h2>
+    <p class="note">IDL below is an abstract description of interfaces; concrete language bindings (TypeScript, Swift, Kotlin, etc.) MAY adapt types idiomatically while preserving semantics.</p>
+    <pre class="idl">
+    // Axis and directions
+    enum AxisKeyword { "primary", "secondary" }; // Hosts MAY alias (e.g., Web: "block"/"inline")
+    enum Direction { "neg", "none", "pos" };    // maps to -1, 0, +1
+    enum Origin { "user", "program", "momentum" };
+
+    // Scrolling domains
+    enum DomainKind { "bounded", "end-unbounded", "all-unbounded", "circular" };
+
+    // Subscription / disposable pattern
+    interface Subscription { void cancel(); };
+
+    dictionary FrameInfo {
+      double? current;     // su; null when not yet written this frame
+      double  target;      // su
+      double  velocity;    // su per tick
+      Direction direction;
+      double  dt;          // ms since previous frame
+      double? progress;    // null for unbounded domains; [0,1] for bounded; [0,1) for circular
+      double? limit;       // bounded: range; circular: period; unbounded: null
+      DomainKind domain;   // domain of the active axis
+    };
+
+    // State persistence
+    dictionary AxisState { AxisKeyword axis; double position; };
+    dictionary ScrollState {
+      sequence<AxisState> axes;
+      double timestamp; // ms since epoch or host-defined monotonic time
+    };
+
+    // ScrollTo options (per-call animation customization)
+    dictionary ScrollToOptions {
+      boolean immediate = false;       // if true, jump to value this tick
+      Animator? animator;              // overrides the Engine's default animator for this call
+      double? duration;                // ms; if present and animator is null, hosts MAY create a time-based animator
+      DOMString? easing;               // host-defined token (e.g., CSS easing for Web bindings)
+      boolean clamp = true;            // apply domain-appropriate clamping/wrapping
+      boolean userCanInterrupt = true; // if true, user input overrides the in-flight animation
+    };
+
+    // Animator advances current toward target by dt; return null to signal completion this frame.
+    interface Animator {
+      double? step(double current, double target, double dt);
+    };
+
+    // Scheduler ties into the host's presentation clock (e.g., rAF, display link, Choreographer)
+    callback FrameCallback = void (DOMHighResTimeStamp highResTime);
+    interface Scheduler {
+      unsigned long start(FrameCallback callback);
+      void stop(optional unsigned long handle);
+    };
+
+    // Drivers adapt the host's scrollable surface to the Engine
+    callback ScrollListener = void (double position);
+    dictionary DomainDescriptor {
+      DomainKind kind;
+      double? min;     // bounded/end-unbounded/all-unbounded lower bound; null means -Infinity
+      double? max;     // bounded upper bound; null means +Infinity
+      double? period;  // circular only (required > 0 when kind == "circular")
+    };
+    interface Driver {
+      double read(AxisKeyword axis);
+      void write(AxisKeyword axis, double position);
+      double viewportExtent(AxisKeyword axis);
+      double contentExtent(AxisKeyword axis);
+      DomainDescriptor domain(AxisKeyword axis);
+      Subscription onUserScroll(AxisKeyword axis, ScrollListener listener);
+    };
+
+    interface Engine {
+      // Programmatic scroll with optional per-call animation customization
+      void scrollTo(AxisKeyword axis, double value, optional ScrollToOptions options);
+
+      // State persistence API
+      ScrollState snapshot();
+      void restore(ScrollState state, optional boolean immediate = true);
+    };
+
+    // Programmatic settle information surfaced to plugins
+    dictionary SettleInfo {
+      double position;
+      double target;
+      double velocity;
+      Direction direction;
+      double? limit;
+    };
+
+    interface Plugin {
+      readonly attribute DOMString name;
+      void init(Engine engine);
+      // Fired when the host reports a user-initiated scroll for this axis
+      void onUserScroll(double position);
+      // Fired whenever the Engine's target changes (scrollTo or impulses applied)
+      void onTargetChange(double target);
+      // Fired exactly once when an in-flight programmatic animation ends (including immediate scrollTo)
+      void onSettle(SettleInfo info);
+      void destroy();
+    };
+
+    // Optional adapter for host history/storage integration
+    interface HistoryAdapter {
+      void save(ScrollState state, DOMString key);
+      ScrollState? load(DOMString key);
+    };
+    </pre>
+  </section>
+
+  <section>
+    <h2>Model</h2>
+    <p>
+      The Engine maintains, per axis, a <dfn>current position</dfn>, a <dfn>target position</dfn>, and an <dfn>impulse accumulator</dfn>. Inputs add to the accumulator. On each scheduled tick, the Engine (1) applies accumulated impulses to the target, clamped to <a>Limit</a>; (2) advances the current toward the target using the <a>Animator</a>; (3) writes the resulting position through the <a>Driver</a>; and (4) fires Plugin hooks (<code>onUserScroll</code>, <code>onTargetChange</code>, <code>onSettle</code>) as specified.
+    </p>
+  </section>
+
+  <section>
+    <h2>Algorithms</h2>
+    <section>
+      <h3>Compute Domain &amp; Limit</h3>
+      <ol>
+        <li>Let <var>D</var> be <code>Driver.domain(axis)</code>.</li>
+        <li>If <var>D.kind</var> is <code>"bounded"</code>, let <var>limit</var> be <code>max(0, contentExtent(axis) − viewportExtent(axis))</code>.</li>
+        <li>If <var>D.kind</var> is <code>"end-unbounded"</code> or <code>"all-unbounded"</code>, let <var>limit</var> be <code>null</code>.</li>
+        <li>If <var>D.kind</var> is <code>"circular"</code>, let <var>limit</var> be <code>D.period</code> (MUST be &gt; 0).</li>
+      </ol>
+    </section>
+    <section>
+      <h3>ScrollTo</h3>
+      <p>This algorithm is invoked when <code>Engine.scrollTo(axis, value, options)</code> is called.</p>
+      <ol>
+        <li>Let <var>opt</var> be <code>options</code> or the empty dictionary.</li>
+        <li>Run <a>Compute Domain &amp; Limit</a> to obtain <var>D</var> and <var>limit</var>.</li>
+        <li>Determine the destination <var>dest</var> per <var>D.kind</var>:
+          <ol>
+            <li><strong>bounded:</strong> <code>dest = clamp(D.min ?? 0, value, D.max ?? (limit ?? value))</code>.</li>
+            <li><strong>end-unbounded:</strong> <code>dest = max(D.min ?? 0, value)</code>.</li>
+            <li><strong>all-unbounded:</strong> <code>dest = value</code>.</li>
+            <li><strong>circular:</strong> <code>dest = value mod (D.period)</code> mapped to <code>[0, D.period)</code>.</li>
+          </ol>
+        </li>
+        <li>If <var>opt.immediate</var> is true:
+          <ol>
+            <li>Write <var>dest</var> (for circular, write <var>dest</var> in the canonical <code>[0, period)</code> range).</li>
+            <li>Update internal <code>current</code> and <code>target</code> to <var>dest</var>.</li>
+            <li>Invoke <code>Plugin.onTargetChange(dest)</code> on each registered plugin in order.</li>
+            <li>Construct a <a>SettleInfo</a> and invoke <code>Plugin.onSettle(info)</code> on each registered plugin in order.</li>
+            <li>Cancel any in‑flight animation for the axis and return.</li>
+          </ol>
+        </li>
+        <li>Resolve the <em>invocation animator</em> (custom animator → duration/easing animator → default Engine animator).</li>
+        <li>For <strong>circular</strong> only: compute a <var>targetAdjusted</var> by adding or subtracting integer multiples of <code>period</code> so that <code>|targetAdjusted − current|</code> is minimized (shortest‑arc rule). Set <code>target</code> to <var>targetAdjusted</var> but remember <var>dest</var> (canonical).</li>
+        <li>For other domains: set <code>target</code> to <var>dest</var>.</li>
+        <li>Invoke <code>Plugin.onTargetChange(targetCanonical)</code>, where <code>targetCanonical</code> is <var>dest</var> for non‑circular domains and <code>dest</code> in <code>[0, period)</code> for circular.</li>
+        <li>Set the user‑interrupt flag from <var>opt.userCanInterrupt</var> (default true) and schedule frames via the <a>Scheduler</a>.</li>
+      </ol>
+    </section>
+    <section>
+      <h3>Apply Impulse</h3>
+      <ol>
+        <li>Let <var>impulse</var> be the accumulated delta since the last frame for <var>axis</var>. If zero, skip the remaining steps.</li>
+        <li>Run <a>Compute Domain &amp; Limit</a> to obtain <var>D</var> and <var>limit</var>.</li>
+        <li>Update <code>target</code> per domain:
+          <ol>
+            <li><strong>bounded:</strong> <code>target = clamp(D.min ?? 0, target + impulse, D.max ?? (limit ?? (target + impulse)))</code>.</li>
+            <li><strong>end-unbounded:</strong> <code>target = max(D.min ?? 0, target + impulse)</code>.</li>
+            <li><strong>all-unbounded:</strong> <code>target = target + impulse</code>.</li>
+            <li><strong>circular:</strong> <code>target = target + impulse</code> (target may exceed the canonical range during animation).</li>
+          </ol>
+        </li>
+        <li>Compute the canonical target <var>targetCanonical</var> for notification:
+          <ol>
+            <li>For circular, <code>targetCanonical = target mod D.period</code> mapped to <code>[0, D.period)</code>.</li>
+            <li>Otherwise, <code>targetCanonical = target</code>.</li>
+          </ol>
+        </li>
+        <li>Invoke <code>Plugin.onTargetChange(targetCanonical)</code> on each registered plugin in order.</li>
+        <li>Set the accumulated impulse for <var>axis</var> to zero.</li>
+      </ol>
+    </section>
+    <section>
+      <h3>Advance Frame</h3>
+      <ol>
+        <li>Let <var>dt</var> be the elapsed time since the previous invocation.</li>
+        <li>Run <a>Apply Impulse</a> for each axis in use.</li>
+        <li>For each axis: choose the active animator — the invocation animator if present, otherwise the Engine’s default animator.</li>
+        <li>Let <var>current</var> be the last written position or internal signal value; let <var>next</var> be <code>animator.step(current, target, dt)</code>. If <var>next</var> is <code>null</code>, set <var>next</var> to <var>target</var> and clear the invocation animator for that axis.</li>
+        <li>Run <a>Compute Domain &amp; Limit</a> to obtain <var>D</var> and <var>limit</var>. Write per domain:
+          <ol>
+            <li><strong>bounded:</strong> <code>write(axis, clamp(D.min ?? 0, next, D.max ?? (limit ?? next)))</code>.</li>
+            <li><strong>end-unbounded:</strong> <code>write(axis, max(D.min ?? 0, next))</code>.</li>
+            <li><strong>all-unbounded:</strong> <code>write(axis, next)</code>.</li>
+            <li><strong>circular:</strong> <code>write(axis, next mod D.period)</code> (wrapped to <code>[0, period)</code>).</li>
+          </ol>
+        </li>
+        <li>Compute <var>velocity</var> = <code>next − current</code> and <var>direction</var> as the sign of <var>velocity</var>.</li>
+        <li>Compute <var>progress</var> per domain:
+          <ol>
+            <li><strong>bounded:</strong> <code>progress = limit &gt; 0 ? (wrapIfNeeded(next) / limit) : 0</code>.</li>
+            <li><strong>circular:</strong> <code>progress = (wrapIfNeeded(next) / (limit /* period */))</code> in <code>[0,1)</code>.</li>
+            <li><strong>end-unbounded</strong> or <strong>all-unbounded:</strong> <code>progress = null</code>.</li>
+          </ol>
+          <p class="note">For circular, <code>wrapIfNeeded(x)</code> maps <var>x</var> into <code>[0, period)</code>.</p>
+        </li>
+        <li>If the animator completed this frame (i.e., <var>next</var> was <code>null</code> and we wrote the target), construct a <a>SettleInfo</a> with the canonical written position and invoke <code>Plugin.onSettle(info)</code> on each registered plugin in order.</li>
+      </ol>
+    </section>
+  </section>
+    <section>
+      <h3>Scheduling</h3>
+      <p>
+        Engine implementations <em class="rfc2119">MUST</em> run <a>Advance Frame</a> using a <a>Scheduler</a> tied to the host’s presentation clock (e.g., display‑link, rAF, Android Choreographer). The callback receives a monotonically increasing high‑resolution timestamp.
+      </p>
+  </section>
+    <section>
+      <h3>User vs. Programmatic Input</h3>
+      <p>
+        When the <a>Driver</a> reports a user‑initiated scroll, Engine implementations <em class="rfc2119">MUST</em> update <code>target</code> to the observed position for that axis. Engine implementations <em class="rfc2119">SHOULD</em> prefer user input over ongoing programmatic animations.
+      </p>
+    </section>
+  </section>
+
+  <section>
+    <h2>State Persistence and History</h2>
+    <p>
+      This section is <strong>normative</strong> for Engines and Bindings that claim history integration.
+    </p>
+    <h3>Requirements</h3>
+    <ul>
+      <li><strong>Snapshot.</strong> Engine implementations <em class="rfc2119">MUST</em> provide <code>snapshot()</code> returning a <a>Scroll State</a> that includes, at minimum, the current position for each in‑use axis and a timestamp.</li>
+      <li><strong>Restore.</strong> Engine implementations <em class="rfc2119">MUST</em> provide <code>restore(state, immediate)</code>. On restore, per axis: compute <a>Limit</a> from current extents, then set the target to <code>clamp(0, state.position, limit)</code>. If <code>immediate</code> is true, write the clamped value before the next frame; otherwise animate toward it.</li>
+      <li><strong>Keying.</strong> Binding definitions that persist across sessions <em class="rfc2119">MUST</em> define how states are keyed (e.g., route or document identity).</li>
+      <li><strong>Freshness.</strong> If content/layout has changed such that <a>Limit</a> differs, restored positions <em class="rfc2119">MUST</em> be clamped to the new limit.</li>
+      <li><strong>User intent.</strong> If a user scroll occurs after restore and before the next animation frame, Engines <em class="rfc2119">MUST</em> treat the observed position as authoritative.</li>
+    </ul>
+
+    <h3>Web Binding (Informative)</h3>
+    <ul>
+      <li>To avoid double‑restoration with the UA, authors SHOULD set <code>history.scrollRestoration = "manual"</code> when the Engine manages restoration.</li>
+      <li>Persist the <a>Scroll State</a> using <code>history.state</code>, <code>sessionStorage</code>, or a router store, keyed by the history entry or route identifier.</li>
+      <li>Restore on <code>pageshow</code> (including BFCache) and when router navigation resolves, then clear any temporary suppression needed to avoid native jumps.</li>
+    </ul>
+
+    <h3>iOS Binding (Informative)</h3>
+    <ul>
+      <li>Save on <code>applicationWillResignActive</code>/<code>sceneWillResignActive</code> and restore on <code>applicationDidBecomeActive</code>/<code>sceneDidBecomeActive</code> or after view re‑creation.</li>
+      <li>Use a stable key per view controller or route to store the <a>Scroll State</a>.</li>
+    </ul>
+
+    <h3>Android Binding (Informative)</h3>
+    <ul>
+      <li>Save in <code>onSaveInstanceState</code>/<code>onPause</code>; restore in <code>onCreate</code>/<code>onResume</code> after layout is measured.</li>
+      <li>Key by Activity/Fragment route or View ID; clamp to post‑layout limits.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Driver Requirements</h2>
+    <ul>
+      <li><strong>Domain description.</strong> Driver implementations <em class="rfc2119">MUST</em> implement <code>domain(axis)</code> and correctly report <a>DomainKind</a>. For <code>"circular"</code>, <code>period</code> <em class="rfc2119">MUST</em> be &gt; 0. For unbounded kinds, <code>max</code> <em class="rfc2119">MUST</em> be <code>null</code> and <code>min</code> <em class="rfc2119">SHOULD</em> be provided if a lower bound exists.</li>
+      <li><strong>Read/Write semantics.</strong> Driver implementations <em class="rfc2119">MUST</em> expose <code>read()</code> and <code>write()</code> for positions in <em>su</em>, and <em class="rfc2119">MUST</em> define their mapping to platform units.</li>
+      <li><strong>Extents.</strong> Driver implementations <em class="rfc2119">MUST</em> report <code>viewportExtent()</code> and <code>contentExtent()</code>; Engines derive <a>Limit</a> (or <em>period</em> for circular) from these values and <code>domain()</code>.</li>
+      <li><strong>Rebasing (unbounded domains).</strong> For <code>"end-unbounded"</code> and <code>"all-unbounded"</code>, Driver implementations <em class="rfc2119">MUST</em> implement internal rebasing to keep host coordinates finite while exposing continuous virtual positions via <code>read()</code>/<code>write()</code>/<code>onUserScroll()</code>. Rebases <em class="rfc2119">MUST</em> be invisible to observers (no jumps) and preserve ordering.</li>
+      <li><strong>User‑scroll detection.</strong> Driver implementations <em class="rfc2119">SHOULD</em> surface user‑caused scroll changes via <code>onUserScroll()</code> and avoid feedback loops when changes originate from <code>write()</code>.</li>
+      <li><strong>Axis mapping.</strong> Driver implementations <em class="rfc2119">MUST</em> document how logical axes map to physical directions in the host (e.g., vertical/horizontal, writing modes, RTL).</li>
+      <li><strong>Threading.</strong> If the host performs scrolling off the main UI thread, the Driver implementation <em class="rfc2119">MUST</em> marshal reads/writes safely and preserve ordering.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Input Modules</h2>
+    <p>Input Module implementations translate host events into impulses (in <em>su</em>) for a chosen axis.</p>
+    <ul>
+      <li><strong>Pointer/Wheel.</strong> Scale deltas according to host‑provided units (pixels/lines/pages, counts/steps), honoring event cancelability when intercepting native scrolling.</li>
+      <li><strong>Touch/Pan.</strong> Derive signed deltas from contact movement; when assuming responsibility for scrolling, suppress host defaults using the host’s mechanism (e.g., preventDefault, gesture recognizer cancellation).</li>
+      <li><strong>Keyboard.</strong> Map keys (PageUp/Down, Arrow keys, Home/End) to step sizes.</li>
+      <li><strong>Controller.</strong> Map analog/relative inputs to impulses with adjustable sensitivity and dead‑zones.</li>
+      <li><strong>Nested/Chained scrolling.</strong> Input Module implementations <em class="rfc2119">SHOULD</em> optionally allow scroll chaining—deferring to parent/ancestor drivers when at bounds.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Animator Requirements</h2>
+    <ul>
+      <li>Animator implementations <em class="rfc2119">MUST</em> be time‑step aware. For exponential smoothing, implementers <em class="rfc2119">SHOULD</em> compute a frame‑rate‑independent factor from a user‑provided parameter and <code>dt</code>.</li>
+      <li>Returning <code>null</code> indicates completion on that frame.</li>
+      <li>Animator implementations <em class="rfc2119">MAY</em> expose critically damped spring, bounded friction, or custom curves.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Plugin Model</h2>
+    <p>The plugin API is designed for <em>observation</em> and <em>lifecycle</em> around scrolling, rather than per-frame mutation. Plugins do not modify impulses or frame stepping; they receive high-level hooks that align with user-journey events.</p>
+    <ul>
+      <li><strong>Lifecycle.</strong> <code>init(engine)</code> is invoked once upon registration; <code>destroy()</code> is invoked once upon removal.</li>
+      <li><strong>User scroll observation.</strong> When the Driver reports a user-initiated scroll, Engine implementations <em class="rfc2119">MUST</em> invoke <code>onUserScroll(position)</code> on each plugin <em>in registration order</em>.</li>
+      <li><strong>Target changes.</strong> Whenever the Engine’s <em>target</em> changes (via <code>scrollTo()</code> or after impulses are applied), Engine implementations <em class="rfc2119">MUST</em> invoke <code>onTargetChange(targetCanonical)</code>. For circular domains, <code>targetCanonical</code> is wrapped to <code>[0, period)</code>; for other domains it is the unclamped target after domain-appropriate clamping.</li>
+      <li><strong>Programmatic settle.</strong> When an in‑flight programmatic animation completes (including <code>scrollTo(..., { immediate: true })</code>), Engine implementations <em class="rfc2119">MUST</em> invoke <code>onSettle(info)</code> exactly once for that animation with a <a>SettleInfo</a> snapshot.</li>
+      <li><strong>Ordering.</strong> All plugin callbacks <em class="rfc2119">MUST</em> be invoked synchronously in registration order.</li>
+      <li><strong>Error handling.</strong> Engine implementations <em class="rfc2119">SHOULD</em> isolate plugin exceptions so they do not destabilize the Engine; implementations <em class="rfc2119">MAY</em> disable a plugin after repeated failures.</li>
+      <li><strong>Cross-axis effects.</strong> Plugins <em class="rfc2119">MUST NOT</em> assume callbacks are single-axis only; bindings SHOULD document which axis is affected when multi-axis drivers are used.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Host Binding Examples (Informative)</h2>
+    <section>
+      <h3>Web Binding (DOM)</h3>
+      <ul>
+        <li><em>Units:</em> 1 su = 1 CSS px.</li>
+        <li><em>Scheduler:</em> <code>requestAnimationFrame</code>.</li>
+        <li><em>Driver read/write:</em> <code>scrollTop/scrollLeft</code> or <code>window.scrollTo({ behavior: "instant" })</code>.</li>
+        <li><em>Extents:</em> <code>scrollWidth/Height</code> and <code>clientWidth/Height</code>.</li>
+        <li><em>Wheel:</em> use <code>WheelEvent.delta*</code> + <code>deltaMode</code> scaling; when intercepting, register non‑passive and call <code>preventDefault()</code> when cancelable.</li>
+        <li><em>Touch:</em> derive deltas from <code>touchmove</code>; cancel default scrolling when responsible.</li>
+        <li><em>Optional:</em> plugin integration with Web Animations or CSS Scroll‑Driven Animations.</li>
+        <li><em>History:</em> Consider setting <code>history.scrollRestoration = "manual"</code> and storing <code>engine.snapshot()</code> in <code>history.state</code> or <code>sessionStorage</code>, keyed by the current route or <code>location.href</code>.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>iOS Binding (UIKit) — example</h3>
+      <ul>
+        <li><em>Units:</em> 1 su = 1 pt.</li>
+        <li><em>Scheduler:</em> <code>CADisplayLink</code>.</li>
+        <li><em>Driver read/write:</em> <code>UIScrollView.contentOffset</code> (read) and <code>setContentOffset(_:animated:false)</code> (write).</li>
+        <li><em>Extents:</em> <code>contentSize</code> and <code>bounds.size</code>.</li>
+        <li><em>Touch/Pan:</em> via <code>UIPanGestureRecognizer</code> or scroll view delegate hooks. When the Engine owns scrolling, cancel competing gestures appropriately.</li>
+        <li><em>History:</em> store <code>snapshot()</code> in a route‑scoped state container (e.g., view model) and call <code>restore()</code> on view re‑creation.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Android Binding (View System) — example</h3>
+      <ul>
+        <li><em>Units:</em> 1 su = 1 dp.</li>
+        <li><em>Scheduler:</em> <code>Choreographer</code>.</li>
+        <li><em>Driver read/write:</em> <code>getScrollX/Y()</code> and <code>scrollTo()</code> / smooth‑scroll disabled for immediate writes.</li>
+        <li><em>Extents:</em> <code>computeHorizontal/VerticalScrollRange()</code> and <code>compute...Extent()</code>.</li>
+        <li><em>Input:</em> map <code>MotionEvent</code> (touch) and <code>onGenericMotionEvent</code>/<code>onScroll</code> (wheel) to impulses; use nested scrolling APIs when chaining.</li>
+        <li><em>History:</em> save <code>snapshot()</code> in <code>onSaveInstanceState</code> or a retained ViewModel; <code>restore()</code> after layout.</li>
+      </ul>
+    </section>
+  </section>
+
+  <section>
+    <h2>Accessibility Considerations</h2>
+    <ul>
+      <li>Honor reduced‑motion settings on the host platform by disabling or shortening animations.</li>
+      <li>Preserve keyboard navigation and focus behavior where applicable.</li>
+      <li>Prefer platform conventions for large steps (page) and small steps (line/arrow).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Security, Privacy, and Safety</h2>
+    <ul>
+      <li>Do not capture input unless necessary; minimize interception of native gestures.</li>
+      <li>Engines SHOULD avoid exposing raw high‑frequency input streams beyond what is needed for plugins.</li>
+      <li>Persisted <a>Scroll State</a> MAY contain sensitive navigation context; bindings SHOULD scope it appropriately (e.g., per‑route) and avoid leaking across users/workspaces.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Performance Considerations</h2>
+    <ul>
+      <li>Minimize per‑frame work; coalesce impulses; avoid layout/measure thrash in bindings.</li>
+      <li>Use time‑based easing to maintain consistent feel across refresh rates (60/90/120 Hz).</li>
+      <li>Be power‑aware; pause the scheduler when idle or off‑screen.</li>
+      <li>Defer restoration until after layout/measurement is stable; if the host provides a post‑layout callback, prefer it.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Test Cases (Informative)</h2>
+    <p>The following high‑level tests are intended to guide conformance test development across hosts.</p>
+    <ol>
+      <li><strong>IDL parses:</strong> The <code>pre.idl</code> block in this spec MUST parse without WebIDL errors.</li>
+      <li><strong>Clamping (bounded):</strong> Given <code>contentExtent=2000</code> su and <code>viewportExtent=500</code> su, the <a>Limit</a> is 1500 su. Applying an impulse that sets <code>target=1600</code> su MUST clamp to 1500 su.</li>
+      <li><strong>End‑unbounded clamp:</strong> With <code>min=0</code>, values below 0 MUST clamp to 0; large positive values MUST be accepted.</li>
+      <li><strong>All‑unbounded continuity:</strong> Large positive/negative sequences MUST not produce numeric drift; velocities remain stable after simulated rebases.</li>
+      <li><strong>Circular seam (shortest arc):</strong> When <code>current≈0.98·period</code> and <code>dest≈0.02·period</code>, the chosen delta MUST be negative and of magnitude <code>&lt;= period/2</code>.</li>
+      <li><strong>Progress nullability:</strong> In end‑unbounded and all‑unbounded domains, <code>FrameInfo.progress</code> MUST be <code>null</code>. In bounded, it MUST be in <code>[0,1]</code>; in circular, in <code>[0,1)</code>.</li>
+      <li><strong>ScrollTo immediate:</strong> Calling <code>scrollTo(axis, V, { immediate: true })</code> MUST write V (or domain‑adjusted V) before the next frame and cancel any in‑flight animation on that axis.</li>
+      <li><strong>ScrollTo custom animator:</strong> Given a custom <a>Animator</a> A that reaches <code>null</code> only after N frames, <code>scrollTo(..., { animator: A })</code> MUST use A and not the Engine’s default animator.</li>
+      <li><strong>ScrollTo duration/easing:</strong> With <code>{ duration: 300, easing: "linear" }</code>, progress after ~150 ms SHOULD be ~0.5 (± binding tolerance); after ≥300 ms the position MUST equal the destination (within rounding), and the animation MUST end.</li>
+      <li><strong>User interrupt policy:</strong> With <code>{ userCanInterrupt: false }</code>, user wheel/touch input during the in‑flight animation SHOULD NOT change <code>target</code> until the animation ends; with default policy (true) it MUST interrupt.</li>
+      <li><strong>Plugin onUserScroll:</strong> When the Driver emits a user scroll event with position P, each registered plugin MUST receive exactly one <code>onUserScroll(P)</code> callback in registration order.</li>
+      <li><strong>Plugin onTargetChange (scrollTo):</strong> After <code>scrollTo(...)</code> sets a new target T, plugins MUST receive <code>onTargetChange(T_canonical)</code>. For circular domains, <code>T_canonical</code> MUST equal <code>T mod period</code>.</li>
+      <li><strong>Plugin onTargetChange (impulse):</strong> After an impulse updates the target, plugins MUST receive <code>onTargetChange(T_canonical)</code> once per frame in which the target changed.</li>
+      <li><strong>Plugin onSettle (animated):</strong> When an animation reaches completion (animator returns <code>null</code>), plugins MUST receive exactly one <code>onSettle(info)</code> with the final canonical position.</li>
+      <li><strong>Plugin onSettle (immediate):</strong> For <code>scrollTo(..., { immediate: true })</code>, plugins MUST receive <code>onTargetChange</code> followed by <code>onSettle</code> within the same tick.</li>
+      <li><strong>Plugin ordering:</strong> For any of the above notifications, callbacks MUST occur in registration order.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Versioning and Levels</h2>
+    <p>
+      This specification uses semantic versioning for snapshots. Backward‑incompatible changes increment the major version. Editors may also publish <em>Levels</em> (e.g., Level 1, Level 2) for larger milestone groupings.
+    </p>
+  </section>
+
+  <section>
+    <h2>Change Process</h2>
+    <ol>
+      <li>Proposals are filed as GitHub issues labeled <code>proposal</code>.</li>
+      <li>After discussion, editors may accept a proposal behind an <code>at‑risk</code> flag in the Editor’s Draft.</li>
+      <li>Accepted proposals are merged and included in the next snapshot release. Implementations SHOULD track the Editor’s Draft for the latest guidance.</li>
+      <li>Each snapshot includes an updated <a href="#changelog">Change Log</a>.</li>
+    </ol>
+  </section>
+
+  <section id="references">
+    <h2>References</h2>
+    <p class="note">Normative host bindings should cite the relevant platform documentation (e.g., CSSOM View, Wheel/Touch Events, UIKit, Android View APIs).</p>
+  </section>

@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "export:assertions": "speculator export:assertion"
   },
   "dependencies": {
     "astro": "^5.12.9"
@@ -15,10 +16,12 @@
   "devDependencies": {
     "@openuji/speculator": "^0.3.0",
     "@primer/css": "^22.0.2",
+    "@tailwindcss/vite": "^4.1.12",
     "chokidar-cli": "^3.0.0",
     "esbuild": "^0.25.8",
     "execa": "^9.6.0",
     "fast-glob": "^3.3.3",
-    "linkedom": "^0.18.11"
+    "linkedom": "^0.18.11",
+    "tailwindcss": "^4.1.12"
   }
 }

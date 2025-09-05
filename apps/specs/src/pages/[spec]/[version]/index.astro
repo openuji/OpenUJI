@@ -2,6 +2,7 @@
 import SpecLayout from "@/layouts/SpecLayout.astro";
 import { renderSpecFromFile } from "@/lib/speculator";
 import { listSpecs } from "@/lib/spec-index";
+import TOC from "@/components/toc/TOC.astro";
 
 export async function getStaticPaths() {
   // Add more products here if needed (or discover them similarly)
@@ -32,6 +33,11 @@ try {
 ---
 
 <SpecLayout title={`${spec.toUpperCase()} ${version}`}>
-  <div set:html={result?.toc} data-format="html" />
-  <div set:html={result.sections} data-format="html" />
+  
+  <div class="flex">
+  <TOC toc={result.toc} />
+  <div class="content-width mx-auto">
+    <div set:html={result.sections} data-format="html" />
+  </div>  
+  </div>
 </SpecLayout>
