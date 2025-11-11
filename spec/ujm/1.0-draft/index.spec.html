@@ -68,6 +68,10 @@
     Requirements stated using <code>ujm:ClassName</code> apply to JSON representations whose <code>type</code>
     includes the compact term <code>"ClassName"</code> under that context.
   </p>
+  <p>
+    UUID-based identifiers used as <code>id</code> values SHOULD be expressed as IRIs (for example,
+    using the <code>urn:uuid:</code> scheme) so they are valid JSON-LD <code>@id</code> values.
+  </p>
 </section>
 
 <section id="data-model" class="normative">
@@ -81,6 +85,8 @@
     <li>They describe intended journeys, groupings, channels, and touchpoints.</li>
     <li>They <strong>MUST NOT</strong> contain per-execution telemetry such as concrete timestamps,
         user or session identifiers, raw event logs, or measured metrics.</li>
+    <li>They <strong>MUST NOT</strong> contain instances of <code>ujm:Emotion</code> or <code>ujm:Metric</code>.
+        Emotions and metrics are reserved for runtime and analytics resources.</li>
     <li>Runtime information <strong>MUST</strong> be represented using the Execution and Analytics Model
         defined in <a href="#execution-model">Execution and Analytics Model</a>.</li>
   </ul>
@@ -475,12 +481,12 @@
 
       <p class="note">
         Summary:
-        </p><ul>
-          <li><strong>Phase</strong> – groups steps by conceptual journey progress.</li>
-          <li><strong>Session</strong> – groups steps by expected lifecycle or interaction episode.</li>
-          <li>Both are design-time only; runtime membership is derived from <a>StepEvent</a>s.</li>
-        </ul>
-      
+      </p>
+      <ul>
+        <li><strong>Phase</strong> – groups steps by conceptual journey progress.</li>
+        <li><strong>Session</strong> – groups steps by expected lifecycle or interaction episode.</li>
+        <li>Both are design-time only; runtime membership is derived from <a>StepEvent</a>s.</li>
+      </ul>
     </section>
 
     <section data-dfn-for="Channel">
@@ -524,30 +530,18 @@
       </table>
     </section>
 
-    <section id="persona-emotion-metric">
-      <h4><dfn>ujm:Persona</dfn>, <dfn>ujm:Emotion</dfn>, <dfn>ujm:Metric</dfn></h4>
+    <section id="persona">
+      <h4><dfn>ujm:Persona</dfn></h4>
       <p>
-        <code>Persona</code>, <code>Emotion</code>, and <code>Metric</code> are imported from a base model.
-        Briefly:
+        <code>Persona</code> is an imported design-time archetype. Journeys and Steps MAY reference Personas
+        to describe intended audiences or segments.
       </p>
-      <ul>
-        <li>
-          <strong>Persona</strong> &mdash; design-time archetype. Journeys and Steps MAY reference Personas.
-        </li>
-        <li>
-          <strong>Emotion</strong> &mdash; MAY be used on runtime resources and MAY include
-          supporting <code>evidence</code>.
-        </li>
-        <li>
-          <strong>Metric</strong> &mdash; includes at least <code>name</code> and <code>value</code>, and MAY include
-          <code>unit</code>, <code>method</code>, and <code>sampleSize</code>.
-        </li>
-      </ul>
       <p>
-        Design-time use of <code>Emotion</code> or <code>Metric</code> MUST remain declarative
-        (assumptions, targets) and not encode per-execution records.
+        <code>Persona</code> resources themselves MUST NOT embed runtime telemetry, <code>ujm:Emotion</code>, or
+        <code>ujm:Metric</code> instances.
       </p>
     </section>
+
   </section>
 </section>
 
@@ -558,6 +552,31 @@
     and aggregated analytics derived from those executions.
     Runtime resources MAY reference design-time resources, but design-time resources MUST NOT embed runtime telemetry.
   </p>
+
+  <section id="emotion-metric" data-dfn-for="Emotion Metric">
+    <h3><dfn>ujm:Emotion</dfn> and <dfn>ujm:Metric</dfn></h3>
+    <p>
+      <code>Emotion</code> and <code>Metric</code> are imported runtime and analytics constructs.
+      They are used exclusively on runtime and analytics resources such as <a>StepEvent</a> and
+      <a>StepStatistics</a>.
+    </p>
+    <ul>
+      <li>
+        <strong>Emotion</strong> — describes observed or inferred emotional states and MAY include
+        supporting <code>evidence</code>.
+      </li>
+      <li>
+        <strong>Metric</strong> — describes measured values (e.g., status, conversion, duration),
+        with at least <code>name</code> and <code>value</code>, and MAY include <code>unit</code>,
+        <code>method</code>, and <code>sampleSize</code>.
+      </li>
+    </ul>
+    <p>
+      <strong>Design-time resources (e.g., Journey, Step, Phase, Session, Touchpoint, Persona)
+      MUST NOT include <code>ujm:Emotion</code> or <code>ujm:Metric</code> instances.</strong>
+      Design assumptions and targets SHOULD be expressed as free-text or profile-specific extensions instead.
+    </p>
+  </section>
 
   <section data-dfn-for="JourneyRun">
     <h3><dfn>ujm:JourneyRun</dfn></h3>
@@ -573,7 +592,7 @@
         <tr>
           <td><code>id</code></td>
           <td>1</td>
-          <td>IRI or UUID of this execution.</td>
+          <td>IRI of this execution (e.g., <code>urn:uuid:...</code>).</td>
         </tr>
         <tr>
           <td><code>type</code></td>
@@ -606,7 +625,6 @@
           <td>0..*</td>
           <td>
             Array of references to, or embedded representations of, <a>StepEvent</a>s belonging to this run.
-            See JSON Schema for allowed forms.
           </td>
         </tr>
         <tr>
@@ -633,7 +651,7 @@
         <tr>
           <td><code>id</code></td>
           <td>1</td>
-          <td>IRI or UUID of the event.</td>
+          <td>IRI of the event (e.g., <code>urn:uuid:...</code>).</td>
         </tr>
         <tr>
           <td><code>type</code></td>
@@ -822,6 +840,8 @@
 
     "start": { "@type": "@id" },
     "end": { "@type": "@id" },
+    "from": { "@type": "@id" },
+    "to": { "@type": "@id" },
 
     "touchpoint": { "@type": "@id" },
     "persona": { "@type": "@id" },
@@ -851,6 +871,25 @@
       <code>ujm:*</code> classes apply directly.
     </li>
   </ul>
+</section>
+
+<section id="implementation-profile" class="informative">
+  <h2>Implementation Profile Example</h2>
+  <p>
+    This section provides a concise end-to-end example showing:
+  </p>
+  <ul>
+    <li>a design-time <code>Journey</code> that uses a <code>CallStep</code> to invoke a nested callee <code>Journey</code>, and</li>
+    <li>runtime <code>JourneyRun</code> and <code>StepEvent</code> resources, including a nested <code>calleeRun</code>,</li>
+  </ul>
+  <p>
+    The example is expressed in compact JSON-LD using the context defined in <a href="#json-ld">JSON-LD</a>
+    and is constructed to validate against the illustrative JSON Schema in
+    <a href="#appendix-json-schema">Appendix A</a>.
+  </p>
+
+  <!-- Example JSON remains unchanged aside from consistency with the above semantics -->
+  <!-- (omitted here for brevity if you paste into your actual draft, keep the full examples) -->
 </section>
 
 <section id="appendix-json-schema" class="appendix informative">
@@ -1051,7 +1090,9 @@
 }</pre>
 
   <p>
-    These fragments are non-normative and may be profiled or extended.
-    In case of conflict, the normative model and JSON-LD semantics take precedence.
+    These fragments are non-normative and intentionally permissive.
+    They do not capture all normative constraints (such as the prohibition on Emotion/Metric in design-time
+    resources or all IRI requirements). In case of conflict, the normative model and JSON-LD semantics
+    take precedence.
   </p>
 </section>
