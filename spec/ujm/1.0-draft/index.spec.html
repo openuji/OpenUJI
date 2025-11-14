@@ -309,7 +309,9 @@
       <p>
         A <code>Transition</code> connects two <a>Step</a>s within the same <a>Journey</a>.
         It is a design-time construct and MUST NOT contain runtime telemetry.
+        The <code>from</code> and <code>to</code> steps MUST be distinct; self-transitions where <code>from</code> and <code>to</code> identify the same Step are NOT allowed.
       </p>
+      
       <table class="simple">
         <thead>
           <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
@@ -330,6 +332,8 @@
             <td>1 each</td>
             <td>
               IRIs of <a>Step</a>s defined in the same containing <a>Journey</a>.
+              The <code>from</code> and <code>to</code> values MUST refer to two distinct Steps
+              (i.e., <code>from</code> and <code>to</code> MUST NOT be equal).
             </td>
           </tr>
           <tr>
