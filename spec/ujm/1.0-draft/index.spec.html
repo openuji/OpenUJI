@@ -65,9 +65,19 @@
     they are intended to be interpreted via the JSON-LD context in <a href="#json-ld">JSON-LD</a>, where
     they expand to IRIs in the <code>https://www.w3.org/ns/ujm#</code> namespace (for example,
     <code>"Journey"</code> &rarr; <code>ujm:Journey</code>).
-    Requirements stated using <code>ujm:ClassName</code> apply to JSON representations whose <code>type</code>
-    includes the compact term <code>"ClassName"</code> under that context.
-  </p>
+    </p>
+   <p>
+  Requirements stated using <code>ujm:ClassName</code> apply to JSON representations whose
+  <code>type</code> is the compact term <code>"ClassName"</code> under that context.
+  In this specification, <code>type</code> MUST be a single string value, not an array.
+  For subclass relationships defined in the UJM vocabulary (for example,
+  <code>ujm:CallStep</code> as a subclass of <code>ujm:Step</code>), requirements on the
+  superclass also apply to JSON representations whose <code>type</code> is the subclass
+  term only.
+  Some structural helper objects (such as inline <code>StepRef</code> values) MAY omit
+  a <code>type</code> and are governed by the constraints of their containing resources.
+</p>
+
   <p>
     UUID-based identifiers used as <code>id</code> values SHOULD be expressed as IRIs (for example,
     using the <code>urn:uuid:</code> scheme) so they are valid JSON-LD <code>@id</code> values.
@@ -83,8 +93,8 @@
   </p>
   <ul>
     <li>They describe intended journeys, groupings, channels, and touchpoints.</li>
-    <li>They <strong>MUST NOT</strong> contain per-execution telemetry such as concrete timestamps,
-        user or session identifiers, raw event logs, or measured metrics.</li>
+    <li>They <strong>MUST NOT</strong> contain per-execution telemetry such as event timestamps,
+    user or session identifiers, raw event logs, or measured metrics.</li>
     <li>They <strong>MUST NOT</strong> contain instances of <code>ujm:Emotion</code> or <code>ujm:Metric</code>.
         Emotions and metrics are reserved for runtime and analytics resources.</li>
     <li>Runtime information <strong>MUST</strong> be represented using the Execution and Analytics Model
@@ -110,8 +120,8 @@
           <tr><td><code>id</code></td><td>1</td><td>IRI of the journey definition.</td></tr>
           <tr>
             <td><code>type</code></td>
-            <td>1..*</td>
-            <td>MUST include <code>ujm:Journey</code>.</td>
+            <td>1</td>
+            <td>MUST be <code>ujm:Journey</code>.</td>
           </tr>
           <tr><td><code>title</code></td><td>1</td><td>Human-readable title.</td></tr>
           <tr>
@@ -164,7 +174,7 @@
             <td>0..1 each</td>
             <td>
               IRIs of designated initial and terminal <a>Step</a>s within this Journey.
-              A Journey intended to be a callee of a <a>CallStep</a> SHOULD define <code>start</code>.
+              A Journey intended to be a callee of a <a>CallStep</a> MUST define <code>start</code>.
             </td>
           </tr>
         </tbody>
@@ -190,9 +200,14 @@
           </tr>
           <tr>
             <td><code>type</code></td>
-            <td>1..*</td>
-            <td>MUST include <code>ujm:Step</code> (or a subclass such as <code>ujm:CallStep</code>).</td>
-          </tr>
+            <td>1</td>
+            <td>
+                MUST be <code>ujm:Step</code> for resources that are instances of <code>ujm:Step</code>
+                and not of a more specific subclass.
+                Subclasses such as <code>ujm:CallStep</code> MUST use their own class term in
+                <code>type</code> instead of <code>"Step"</code>.
+              </td>          
+            </tr>
           <tr>
             <td><code>name</code></td>
             <td>1</td>
@@ -239,7 +254,16 @@
           <tr><th>Property</th><th>Cardinality</th><th>Constraints</th></tr>
         </thead>
         <tbody>
-          <tr>
+            <tr>
+              <td><code>type</code></td>
+              <td>1</td>
+              <td>
+                MUST be <code>ujm:CallStep</code>. CallStep instances MUST NOT also declare
+                <code>ujm:Step</code> in <code>type</code>; Step-level constraints apply
+                via the subclass relationship described in this specification.
+              </td>
+            </tr>
+            <tr>
             <td><code>calls</code></td>
             <td>1</td>
             <td>
@@ -259,22 +283,25 @@
           <tr>
             <td><code>exitMap</code></td>
             <td>0..*</td>
-            <td>
-              Array of mappings from callee outcomes to labels in the caller Journey, e.g.
-              <code>{"calleeEnd":"success","label":"success"}</code>.
-              Outcomes are defined by the callee Journey’s own terminal states or labels.
-              For deterministic composition:
-              <ul>
-                <li>
-                  Transitions leaving the <code>CallStep</code> in the caller Journey that use
-                  <code>label</code> SHOULD use values listed in <code>exitMap.label</code>.
-                </li>
-                <li>
-                  If <code>exitMap</code> is omitted, a single unlabeled return path is assumed, and
-                  callers SHOULD use unlabeled transitions or a single default label.
-                </li>
-              </ul>
-            </td>
+             <td>
+    Array of mappings from callee terminal <a>Step</a>s to labels in the caller Journey, e.g.
+<code>{"calleeEnd":"https://example.org/journey/checkout#success","label":"success"}</code>.
+The <code>calleeEnd</code> value MUST be the IRI of a <a>Step</a> in the callee
+<a>Journey</a> identified by <code>calls</code>. It identifies the terminal Step in the
+callee for which the mapping applies.
+For deterministic composition:
+<ul>
+  <li>
+    Transitions leaving the <code>CallStep</code> in the caller Journey that use
+    <code>label</code> SHOULD use values listed in <code>exitMap.label</code>.
+  </li>
+  <li>
+    If <code>exitMap</code> is omitted, a single unlabeled return path is assumed, and
+    callers SHOULD use unlabeled transitions or a single default label.
+  </li>
+</ul>
+
+  </td>
           </tr>
           <tr>
             <td><code>parameters</code></td>
@@ -324,8 +351,8 @@
           </tr>
           <tr>
             <td><code>type</code></td>
-            <td>0..*</td>
-            <td>If present, SHOULD include <code>ujm:Transition</code>.</td>
+            <td>1</td>
+            <td>MUST be <code>ujm:Transition</code>.</td>
           </tr>
           <tr>
             <td><code>from</code>, <code>to</code></td>
@@ -370,8 +397,8 @@
           <tr><td><code>id</code></td><td>1</td><td>IRI of the pattern.</td></tr>
           <tr>
             <td><code>type</code></td>
-            <td>1..*</td>
-            <td>MUST include <code>ujm:TransitionPattern</code>.</td>
+            <td>1</td>
+            <td>MUST be <code>ujm:TransitionPattern</code>.</td>
           </tr>
           <tr><td><code>name</code></td><td>1</td><td>Human-readable name.</td></tr>
           <tr>
@@ -410,8 +437,8 @@
             <tr><td><code>id</code></td><td>1</td><td>IRI of the phase.</td></tr>
             <tr>
               <td><code>type</code></td>
-              <td>1..*</td>
-              <td>MUST include <code>ujm:Phase</code>.</td>
+              <td>1</td>
+              <td>MUST be <code>ujm:Phase</code>.</td>
             </tr>
             <tr><td><code>name</code></td><td>1</td><td>Human-readable label.</td></tr>
             <tr>
@@ -440,8 +467,8 @@
             <tr><td><code>id</code></td><td>1</td><td>IRI of the session grouping.</td></tr>
             <tr>
               <td><code>type</code></td>
-              <td>1..*</td>
-              <td>MUST include <code>ujm:Session</code>.</td>
+              <td>1</td>
+              <td>MUST be <code>ujm:Session</code>.</td>
             </tr>
             <tr><td><code>name</code></td><td>0..1</td><td>Human-readable label.</td></tr>
             <tr>
@@ -481,6 +508,12 @@
             </tr>
           </tbody>
         </table>
+        <p>
+          <code>StepRef</code> is typically used as an inline structural object within <a>Phase</a> and
+          <a>Session</a> resources and does not itself carry an <code>id</code> or <code>type</code>.
+          Its semantics are determined by the <code>step</code> it references and the containing
+          grouping resource.
+        </p>
       </section>
 
       <p class="note">
@@ -514,6 +547,11 @@
         </thead>
         <tbody>
           <tr><td><code>id</code></td><td>1</td><td>MUST be an IRI.</td></tr>
+          <tr>
+            <td><code>type</code></td>
+            <td>1</td>
+            <td>MUST be <code>ujm:Touchpoint</code>.</td>
+          </tr>
           <tr><td><code>name</code></td><td>1</td><td>Human-readable name.</td></tr>
           <tr>
             <td><code>uri</code></td>
@@ -556,6 +594,33 @@
     and aggregated analytics derived from those executions.
     Runtime resources MAY reference design-time resources, but design-time resources MUST NOT embed runtime telemetry.
   </p>
+
+  <section id="privacy" class="informative">
+  <h3>Privacy and Personal Data</h3>
+  <p>
+    This specification is designed primarily for <strong>structural journey models</strong>
+    and <strong>aggregated analytics</strong>. It does not require the collection of any
+    personal data.
+  </p>
+  <ul>
+    <li>
+      Identifiers used in runtime resources such as <code>JourneyRun.actor</code> 
+      SHOULD be <strong>pseudonymous</strong> and SHOULD NOT directly embed personal data
+      (for example, names, email addresses, phone numbers, or raw device identifiers).
+    </li>
+    <li>
+      <code>Metric</code> and <code>StepStatistics</code> resources are intended to carry
+      <strong>aggregated measurements</strong>. They MUST NOT be used to store raw personal
+      attributes or per-person identifiers.
+    </li>
+    <li>
+      Implementations that process personal data remain responsible for complying with
+      applicable privacy and data-protection regulations; such policies are out of scope
+      for this specification.
+    </li>
+  </ul>
+</section>
+
 
   <section id="emotion-metric" data-dfn-for="Emotion Metric">
     <h3><dfn>ujm:Emotion</dfn> and <dfn>ujm:Metric</dfn></h3>
@@ -600,8 +665,8 @@
         </tr>
         <tr>
           <td><code>type</code></td>
-          <td>1..*</td>
-          <td>MUST include <code>ujm:JourneyRun</code>.</td>
+          <td>1</td>
+          <td>MUST be <code>ujm:JourneyRun</code>.</td>
         </tr>
         <tr>
           <td><code>journey</code></td>
@@ -616,7 +681,7 @@
           <td><code>actor</code></td>
           <td>0..1</td>
           <td>
-            IRI of a user, account, session identifier, or Persona; interpretation is profile-specific.
+            IRI of an abstract subject associated with this run (for example, a pseudonymous account key, a technical session ID, or a Persona).
           </td>
         </tr>
         <tr>
@@ -628,8 +693,12 @@
           <td><code>stepEvents</code></td>
           <td>0..*</td>
           <td>
-            Array of references to, or embedded representations of, <a>StepEvent</a>s belonging to this run.
-          </td>
+    Array of references to, or embedded representations of, <a>StepEvent</a>s belonging to this run.
+    For analytical purposes, the sequence of events in a JourneyRun MUST be derived from
+    event-level properties such as <code>StepEvent.order</code> and/or <code>timestamp</code>.
+    The JSON array order (and any JSON-LD container semantics) is not normative for defining
+    the execution order of steps.
+  </td>
         </tr>
         <tr>
           <td><code>tags</code></td>
@@ -659,8 +728,8 @@
         </tr>
         <tr>
           <td><code>type</code></td>
-          <td>1..*</td>
-          <td>MUST include <code>ujm:StepEvent</code>.</td>
+          <td>1</td>
+          <td>MUST be <code>ujm:StepEvent</code>.</td>
         </tr>
         <tr>
           <td><code>step</code></td>
@@ -745,8 +814,8 @@
         </tr>
         <tr>
           <td><code>type</code></td>
-          <td>1..*</td>
-          <td>MUST include <code>ujm:StepStatistics</code>.</td>
+          <td>1</td>
+          <td>MUST be <code>ujm:StepStatistics</code>.</td>
         </tr>
         <tr>
           <td><code>step</code></td>
@@ -856,6 +925,8 @@
     "entry": { "@type": "@id" },
     "pattern": { "@type": "@id" },
     "calleeRun": { "@type": "@id" },
+    "actor": { "@type": "@id" },
+
 
     "stepEvents": { "@container": "@set" },
     "members": { "@container": "@set" }
@@ -905,6 +976,7 @@
     are understood to expand via <code>@vocab</code> to the corresponding <code>ujm:</code> IRIs.
   </p>
 
+
   <pre class="json">{
   "$defs": {
 
@@ -913,16 +985,7 @@
       "required": ["id", "type", "name"],
       "properties": {
         "id": { "type": "string", "format": "uri" },
-        "type": {
-          "oneOf": [
-            { "const": "Step" },
-            {
-              "type": "array",
-              "items": { "type": "string" },
-              "contains": { "const": "Step" }
-            }
-          ]
-        },
+        "type": { "const": "Step" },
         "name": { "type": "string" },
         "description": { "type": "string" },
         "touchpoint": { "type": "string", "format": "uri" },
@@ -940,59 +1003,53 @@
     },
 
     "CallStep": {
-      "allOf": [
-        { "$ref": "#/$defs/Step" },
-        {
-          "type": "object",
-          "required": ["calls"],
-          "properties": {
-            "type": {
-              "oneOf": [
-                { "const": "CallStep" },
-                {
-                  "type": "array",
-                  "items": { "type": "string" },
-                  "contains": { "const": "CallStep" }
-                }
-              ]
-            },
-            "calls": { "type": "string", "format": "uri" },
-            "entry": { "type": "string", "format": "uri" },
-            "exitMap": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["label"],
-                "properties": {
-                  "calleeEnd": { "type": "string" },
-                  "label": { "type": "string" }
-                }
-              }
-            },
-            "parameters": { "type": "object" },
-            "returns": { "type": "object" }
+      "type": "object",
+      "required": ["id", "type", "name", "calls"],
+      "properties": {
+        "id": { "type": "string", "format": "uri" },
+        "type": { "const": "CallStep" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "touchpoint": { "type": "string", "format": "uri" },
+        "channel": { "type": "string" },
+        "persona": { "type": "string", "format": "uri" },
+        "preconditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "postconditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+
+        "calls": { "type": "string", "format": "uri" },
+        "entry": { "type": "string", "format": "uri" },
+        "exitMap": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["calleeEnd", "label"],
+            "properties": {
+              "calleeEnd": { "type": "string", "format": "uri" },
+              "label": { "type": "string" }
+            }
           }
-        }
-      ]
+        },
+        "parameters": { "type": "object" },
+        "returns": { "type": "object" }
+      }
     },
 
     "JourneyRun": {
       "type": "object",
       "required": ["id", "type", "journey"],
       "properties": {
-        "id": { "type": "string" },
+        "id": { "type": "string", "format": "uri" },
         "type": {
-          "oneOf": [
-            { "const": "JourneyRun" },
-            {
-              "type": "array",
-              "items": { "type": "string" },
-              "contains": { "const": "JourneyRun" }
-            }
-          ]
+          "const": "JourneyRun"
         },
         "journey": { "type": "string", "format": "uri" },
-        "actor": { "type": "string" },
+        "actor": { "type": "string", "format": "uri" },
         "started": { "type": "string", "format": "date-time" },
         "ended": { "type": "string", "format": "date-time" },
 
@@ -1017,16 +1074,9 @@
       "type": "object",
       "required": ["id", "type", "step", "journeyRun"],
       "properties": {
-        "id": { "type": "string" },
+        "id": { "type": "string", "format": "uri" },
         "type": {
-          "oneOf": [
-            { "const": "StepEvent" },
-            {
-              "type": "array",
-              "items": { "type": "string" },
-              "contains": { "const": "StepEvent" }
-            }
-          ]
+          "const": "StepEvent"
         },
         "step": { "type": "string", "format": "uri" },
         "journeyRun": { "type": "string", "format": "uri" },
@@ -1054,20 +1104,16 @@
       "type": "object",
       "required": ["id", "type", "step"],
       "properties": {
-        "id": { "type": "string" },
+        "id": { "type": "string", "format": "uri" },
         "type": {
-          "oneOf": [
-            { "const": "StepStatistics" },
-            {
-              "type": "array",
-              "items": { "type": "string" },
-              "contains": { "const": "StepStatistics" }
-            }
-          ]
+          "const": "StepStatistics"
         },
         "step": { "type": "string", "format": "uri" },
         "journey": { "type": "string", "format": "uri" },
-        "scope": {},
+        "scope": {"oneOf": [
+          { "type": "string" },
+          { "type": "object" }
+        ]},
         "metrics": {
           "type": "array",
           "items": { "$ref": "#/$defs/Metric" }
@@ -1077,7 +1123,7 @@
           "items": { "$ref": "#/$defs/Emotion" }
         },
         "sampleSize": {
-          "type": "number",
+          "type": "integer",
           "minimum": 0
         },
         "derivedFrom": {
@@ -1087,11 +1133,12 @@
       }
     }
 
-    /* Emotion, Metric, Journey, Phase, Session, StepRef, etc.,
+    /* Emotion, Metric, Journey, Phase, Session, StepRef, Touchpoint, etc.,
        are omitted here for brevity but follow the normative model. */
 
   }
-}</pre>
+}
+</pre>
 
   <p>
     These fragments are non-normative and intentionally permissive.
