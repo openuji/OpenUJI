@@ -12,13 +12,13 @@
     "astro": "^5.15.9"
   },
   "devDependencies": {
-    "@openuji/speculator": "^0.3.0",
+    "@openuji/speculator": "^0.3.1",
     "@tailwindcss/vite": "^4.1.17",
     "chokidar-cli": "^3.0.0",
-    "esbuild": "^0.25.8",
+    "esbuild": "^0.25.12",
     "execa": "^9.6.0",
     "fast-glob": "^3.3.3",
-    "linkedom": "^0.18.11",
+    "linkedom": "^0.18.12",
     "tailwindcss": "^4.1.17"
   },
   "imports": {
