@@ -3,7 +3,6 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "postinstall": "cp node_modules/@primer/css/dist/primer.css public/_primer.css || true",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -14,7 +13,6 @@
   },
   "devDependencies": {
     "@openuji/speculator": "^0.3.0",
-    "@primer/css": "^22.0.2",
     "@tailwindcss/vite": "^4.1.17",
     "chokidar-cli": "^3.0.0",
     "esbuild": "^0.25.8",
