@@ -399,6 +399,95 @@
   }
 }
 
+@layer components {
+  /* Outer card-like container is already using utility classes via markup */
+
+  /* The table itself */
+  table.simple {
+    @apply w-full text-sm my-4;
+  }
+
+  table.simple thead {
+    @apply bg-muted/50 border-b;
+  }
+
+  table.simple thead th {
+    @apply px-4 py-3 text-left text-sm font-medium text-foreground;
+  }
+
+  table.simple tbody {
+    @apply divide-y divide-border;
+  }
+
+  table.simple tbody td {
+    @apply px-4 py-3 text-sm text-foreground align-top;
+  }
+
+  table.simple tbody tr {
+    @apply hover:bg-muted/30 transition-colors;
+  }
+
+  /* Sticky first column (like stickyFirstColumn=true) */
+  table.simple th:first-child,
+  table.simple td:first-child {
+    @apply sticky left-0 z-10;
+    background: hsl(var(--background));
+  }
+
+  table.simple thead th:first-child {
+    @apply bg-muted/50 z-20;
+  }
+
+  /* Edge fade gradient */
+  .simple-table-fade {
+    background-image: linear-gradient(
+      to left,
+      hsl(var(--background)),
+      transparent
+    );
+  }
+}
+
+
+@layer components {
+  .code-block {
+    @apply my-6 rounded-lg border bg-muted/30 overflow-hidden;
+  }
+
+  .code-block__header {
+    @apply flex items-center justify-between px-4 py-2 border-b bg-muted/50;
+  }
+
+  .code-block__meta {
+    @apply flex items-center gap-2;
+  }
+
+  .code-block__filename {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .code-block__language {
+    @apply inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground;
+  }
+
+  .code-block__copy-btn {
+    @apply h-8 px-2 text-xs rounded-md border bg-background text-muted-foreground 
+           hover:text-foreground hover:bg-accent flex items-center justify-center;
+  }
+
+  .code-block__pre {
+    @apply overflow-x-auto p-4 text-sm font-mono leading-relaxed text-foreground bg-transparent;
+    /* this matches Code: font-mono, text-sm, padding, nice leading */
+  }
+
+  /* pre.json {
+    @apply my-6 rounded-lg border bg-muted/30 overflow-x-auto p-4 
+           text-sm font-mono leading-relaxed text-foreground;
+  } */
+
+}
+
+
 /* Utility classes for responsive constraints */
 @layer utilities {
  .content-width {

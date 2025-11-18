@@ -3,10 +3,11 @@ import Toolbar from '@/components/toolbar/Toolbar.astro';
 import styles from './Spec.module.css';
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { wrap as preWrap } from './utils/pre-wrapper';
 
 export interface Props {
   title: string
-  sections: string
+  sections:  Element[]
   toc: string
   metaData?: Record<string, any>
 }
@@ -14,6 +15,7 @@ const { title, sections, toc, metaData } = Astro.props;
 const sectionsArray = Array.isArray(sections) ? sections : [sections];
 const headerSection: Element[] = []
 const contentSections: Element[] = [];
+preWrap(sectionsArray);
 sectionsArray.forEach(s => {
   if(['abstract', 'sotd', 'conformance'].some(id => s.getAttribute && s.getAttribute('id') === id)) {
     headerSection.push(s);
@@ -22,6 +24,7 @@ sectionsArray.forEach(s => {
   }
 
 });
+
 ---
 <BaseLayout title={title}>
   
@@ -44,3 +47,27 @@ sectionsArray.forEach(s => {
   </div>
     
 </BaseLayout>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.code-block').forEach(block => {
+      const button = block.querySelector('[data-copy]');
+      const pre = block.querySelector('pre');
+
+      if (!button || !pre) return;
+
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(pre.textContent.trim());
+          const original = button.textContent;
+          button.textContent = 'Copied!';
+          setTimeout(() => (button.textContent = original), 2000);
+        } catch (err) {
+          console.error('Failed to copy code:', err);
+          button.textContent = 'Error';
+          setTimeout(() => (button.textContent = 'Copy'), 2000);
+        }
+      });
+    });
+  });
+</script>
