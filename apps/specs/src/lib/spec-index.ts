@@ -7,6 +7,7 @@ export type SpecEntry = {
   spec: string;      // e.g., "ujse"
   version: string;      // e.g., "1.0" or "1.1-draft"
   indexPath: string;    // e.g., "ujse/1.0/index.spec.html"
+  respecPath?: string;   // e.g., "ujse/1.0/respec.json"
   route: string;        // e.g., "/ujse/1.0/"
 };
 
@@ -23,9 +24,17 @@ export async function listSpecs(): Promise<SpecEntry[]> {
 
   for (const version of versions) {
       const indexRel = path.join(spec, version, 'index.spec.html');
+      const respecRel = path.join(spec, version, 'respec.json');
       try {
         await fs.access(path.join(SPEC_DIR, indexRel));
-        entries.push({ spec, version, indexPath: indexRel, route: `/${spec}/${version}/` });
+        let respecPath: string | undefined;
+        try {
+          await fs.access(path.join(SPEC_DIR, respecRel));
+          respecPath = respecRel;
+        } catch {
+          // no respec.json, that's fine
+        }
+        entries.push({ spec, version, indexPath: indexRel, respecPath, route: `/${spec}/${version}/` });
       } catch {
         // skip if no index.spec.html
       }

@@ -23,9 +23,17 @@ export async function renderSpecFromFile(relativeSpecPath: string, opts: RenderO
     },
   });
 
-  const result = await speculator.renderHTML(specHtml);
+  const result = await speculator.renderSections(specHtml);
   
-  console.log(`Speculator rendered ${Object.keys(result)} with ${result.warnings.length} warnings.`);
 
   return result;
+}
+
+export async function loadJson(jsonPath: string): Promise<any> {
+  const SPEC_DIR = (import.meta as any).env?.SPEC_DIR as string | undefined;
+  if (!SPEC_DIR) throw new Error('SPEC_DIR is not configured');
+
+  const fullPath = path.join(SPEC_DIR, jsonPath);
+  const jsonData = await fs.readFile(fullPath, 'utf8');
+  return JSON.parse(jsonData);
 }

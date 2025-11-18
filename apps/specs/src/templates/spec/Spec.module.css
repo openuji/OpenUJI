@@ -6,4 +6,119 @@
   gap: --spacing(4);
   margin-top: --spacing(8);
 
+  aside.toc {
+    position: sticky;
+    height: 100svh;
+    top: 0;
+    overflow-y: auto;
+    width: var(--toc-width);
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    padding: --spacing(4);
+
+    /* 2. Reset List Styles */
+    ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 3. Base Link Styling */
+    a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between; /* Pushes the # icon to the far right */
+      text-decoration: none;
+      color: #0f0f0f; /* Almost black */
+      font-size: 15px;
+      line-height: 1.5;
+      padding: 10px 16px;
+      margin-bottom: 4px;
+      border-radius: 8px; /* Soft rounded corners */
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* 4. Hierarchy / Indentation 
+      Using the data-depth attribute from your HTML */
+    li[data-depth="1"] > a {
+      font-weight: 500; /* Slightly bolder headers */
+      padding-left: 16px;
+    }
+
+    li[data-depth="2"] > a {
+      padding-left: 40px; /* Indent level 2 */
+      color: #333;
+    }
+
+    li[data-depth="3"] > a {
+      padding-left: 64px; /* Indent level 3 */
+      color: #555;
+      font-size: 14px;
+    }
+
+    /* 5. The "Hover" / Active State 
+      matches the "Introduction" block in your image */
+    a:hover,
+    a.active {
+      background-color: #EBEBF9; /* Light Lavender Background */
+      color: #4A4A9C; /* Deep Purple Text */
+      font-weight: 500;
+    }
+
+    /* 6. The Hash (#) Icon 
+      Only visible on hover */
+    a::after {
+      content: "#";
+      font-size: 18px;
+      font-weight: 400;
+      opacity: 0; /* Hidden by default */
+      color: #8fa1d0; /* Lighter purple for the icon */
+      transition: opacity 0.2s ease;
+    }
+
+    a:hover::after {
+      opacity: 1; /* Show on hover */
+    }
+        
+  }
+
+  main {
+    flex: 1;
+  }
+
+   section {
+    margin-block: --spacing(6);
+  }
+
+  .contentSections {
+    margin-top: --spacing(12);
+
+    h2 {
+      padding-bottom: --spacing(2);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: --spacing(6);
+    }
+  
+  }
+ 
+  .headerSections {
+
+
+   
+    h2 {
+      @apply text-sm font-medium text-muted-foreground;
+      margin-bottom: --spacing(2);
+    }
+
+    p, ul {
+      @apply text-sm text-foreground;
+    }
+
+  }
+
 }

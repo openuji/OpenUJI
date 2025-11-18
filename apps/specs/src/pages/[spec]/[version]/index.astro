@@ -1,25 +1,32 @@
 ---
 import SpecTemplate from "@/templates/spec/Spec.astro";
-import { renderSpecFromFile } from "@/lib/speculator";
+import { renderSpecFromFile, loadJson } from "@/lib/speculator";
 import { listSpecs } from "@/lib/spec-index";
 
 export async function getStaticPaths() {
   // Add more products here if needed (or discover them similarly)
   const specs = await listSpecs();
-  return specs.map(({ spec, version, indexPath }) => ({
+  return specs.map(({ spec, version, indexPath, respecPath }) => ({
     params: { spec, version },
-    props: { indexPath, spec, version }
+    props: { indexPath, respecPath, spec, version }
   }));
 }
 
-const { indexPath, spec, version } = Astro.props;
+const { indexPath, spec, respecPath, version } = Astro.props;
 
 let specData: { sections: string; warnings?: string[], toc: string } = { sections: '', toc: '' };
+let metaData: Record<string, any> = {};
 try {
   specData = await renderSpecFromFile(indexPath);
+  if (respecPath) {
+    const respecMeta = await loadJson(respecPath);
+    metaData = respecMeta || {};
+  }
+
   if (specData.warnings?.length) {
     console.warn(`[Speculator] ${spec}@${version}`, specData.warnings);
   }
+
 } catch (err) {
   console.error(`[Speculator] Error rendering ${spec}@${version}`, err);
   Astro.response.status = 404;
@@ -27,4 +34,4 @@ try {
 }
 ---
 
-<SpecTemplate title={`${spec.toUpperCase()} ${version}`} sections={specData.sections} toc={specData.toc} />
+<SpecTemplate title={`${spec.toUpperCase()} ${version}`} sections={specData.sections} toc={specData.toc} metaData={metaData} />

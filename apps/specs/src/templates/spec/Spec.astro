@@ -1,4 +1,5 @@
 ---
+import Toolbar from '@/components/toolbar/Toolbar.astro';
 import styles from './Spec.module.css';
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -7,15 +8,39 @@ export interface Props {
   title: string
   sections: string
   toc: string
+  metaData?: Record<string, any>
 }
-const { title, sections, toc } = Astro.props;
+const { title, sections, toc, metaData } = Astro.props;
+const sectionsArray = Array.isArray(sections) ? sections : [sections];
+const headerSection: Element[] = []
+const contentSections: Element[] = [];
+sectionsArray.forEach(s => {
+  if(['abstract', 'sotd', 'conformance'].some(id => s.getAttribute && s.getAttribute('id') === id)) {
+    headerSection.push(s);
+  }else {
+    contentSections.push(s);
+  }
+
+});
 ---
 <BaseLayout title={title}>
   
   <div class={styles.specTemplate}>
     <aside class={styles.toc} set:html={toc}/>
-    <main class={styles.content} set:html={sections}/>
+    <main class={`${styles.content}`}>
+      <div class="content-width px-6 mx-auto">
+        <h1>{metaData?.title ?? title}</h1>
+        <p>{metaData?.shortName}</p>
+  
+        <div class={styles.headerSections} set:html={headerSection} />
+        <div class={styles.contentSections}>
+          {contentSections.map(section => (
+            <div set:html={section} />
+          ))}
+        </div>
+      </div>
+    </main>
+    <Toolbar />
   </div>
     
-  </SpecTemplate>
 </BaseLayout>
