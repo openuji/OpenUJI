@@ -2,10 +2,12 @@
 import { defineConfig } from 'astro/config';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 
 const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url)); // adjust as needed
 
 const SPEC_DIR = fileURLToPath(new URL('../../spec', import.meta.url)); // monorepo /spec
+
 
 // https://astro.build/config
 export default defineConfig({
@@ -30,5 +32,7 @@ export default defineConfig({
     },
     // inject absolute path so you can read it from server code
     define: { 'import.meta.env.SPEC_DIR': JSON.stringify(SPEC_DIR) },
+    plugins: [tailwindcss()],
+  
 }
 });

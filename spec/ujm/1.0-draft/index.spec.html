@@ -36,7 +36,7 @@
     This specification uses IRIs for identifiers and assumes JSON-LD as the canonical serialization.
     When examples or schemas use compact terms such as <code>"Journey"</code> or <code>"StepEvent"</code>,
     they are intended to be interpreted via the JSON-LD context in <a href="#json-ld">JSON-LD</a>, where
-    they expand to IRIs in the <code>https://www.w3.org/ns/ujm#</code> namespace (for example,
+    they expand to IRIs in the <code>https://www.openuji.org/ns/ujm#</code> namespace (for example,
     <code>"Journey"</code> &rarr; <code>ujm:Journey</code>).
     </p>
    <p>
@@ -58,7 +58,7 @@
 </section>
 
 <section id="data-model" class="normative">
-  <h2>Data Model (Design-time)</h2>
+  <h2 id="h2-data-model-design-time">Data Model (Design-time)</h2>
 
   <p>
     Unless explicitly stated otherwise, all classes defined in this section are
@@ -75,10 +75,10 @@
   </ul>
 
   <section id="journey">
-    <h3>Core Classes</h3>
+    <h3 id="h3-core-classes">Core Classes</h3>
 
     <section data-dfn-for="Journey">
-      <h4><dfn>ujm:Journey</dfn></h4>
+      <h4 id="h4-ujm-journey"><dfn>ujm:Journey</dfn></h4>
       <p>
         A <code>Journey</code> is a design-time definition of a user journey: a graph of <a>Step</a>s and
         <a>Transition</a>s, optionally grouped by <a>Phase</a>s and <a>Session</a>s. Concrete executions are represented
@@ -155,7 +155,7 @@
     </section>
 
     <section data-dfn-for="Step">
-      <h4><dfn>ujm:Step</dfn></h4>
+      <h4 id="h4-ujm-step"><dfn>ujm:Step</dfn></h4>
       <p>
         A <code>Step</code> is a design-time node in a <a>Journey</a>, describing intent, semantics, and placement in
         the journey graph. It does not embed runtime telemetry; observed occurrences are modeled via
@@ -215,7 +215,7 @@
     </section>
 
     <section data-dfn-for="CallStep">
-      <h4><dfn>ujm:CallStep</dfn></h4>
+      <h4 id="h4-ujm-callstep"><dfn>ujm:CallStep</dfn></h4>
       <p>
         A <code>CallStep</code> is a specialized <a>Step</a> that composes another design-time <a>Journey</a>.
         It provides structural composition at design time only.
@@ -305,7 +305,7 @@ For deterministic composition:
     </section>
 
     <section data-dfn-for="Transition">
-      <h4><dfn>ujm:Transition</dfn></h4>
+      <h4 id="h4-ujm-transition"><dfn>ujm:Transition</dfn></h4>
       <p>
         A <code>Transition</code> connects two <a>Step</a>s within the same <a>Journey</a>.
         It is a design-time construct and MUST NOT contain runtime telemetry.
@@ -356,7 +356,7 @@ For deterministic composition:
     </section>
 
     <section data-dfn-for="TransitionPattern">
-      <h4><dfn>ujm:TransitionPattern</dfn></h4>
+      <h4 id="h4-ujm-transitionpattern"><dfn>ujm:TransitionPattern</dfn></h4>
       <p>
         A <code>TransitionPattern</code> is a reusable design-time description of how a
         <a>Transition</a> should be experienced or implemented (e.g., visual behavior, handoff style,
@@ -389,7 +389,7 @@ For deterministic composition:
     </section>
 
     <section id="phases-sessions-stepref">
-      <h4><dfn>ujm:Phase</dfn>, <dfn>ujm:Session</dfn>, and <dfn>ujm:StepRef</dfn></h4>
+      <h4 id="h4-ujm-phase-ujm-session-and-ujm-stepref"><dfn>ujm:Phase</dfn>, <dfn>ujm:Session</dfn>, and <dfn>ujm:StepRef</dfn></h4>
       <p>
         <code>Phase</code> and <code>Session</code> are design-time groupings of <a>Step</a>s using
         members of type <a>StepRef</a>. They define structural relationships only and MUST NOT embed runtime data.
@@ -397,7 +397,7 @@ For deterministic composition:
       </p>
 
       <section data-dfn-for="Phase">
-        <h5>ujm:Phase</h5>
+        <h5 id="h5-ujm-phase">ujm:Phase</h5>
         <p>
           A <code>Phase</code> represents a conceptual stage of journey progress
           (e.g., Awareness, Consideration, Onboarding, Retention).
@@ -426,7 +426,7 @@ For deterministic composition:
       </section>
 
       <section data-dfn-for="Session">
-        <h5>ujm:Session</h5>
+        <h5 id="h5-ujm-session">ujm:Session</h5>
         <p>
           A <code>Session</code> is a design-time grouping of steps that are expected to occur within a coherent
           interaction episode or lifecycle slice (e.g., a login session, onboarding call, support interaction).
@@ -456,7 +456,7 @@ For deterministic composition:
       </section>
 
       <section data-dfn-for="StepRef">
-        <h5>ujm:StepRef</h5>
+        <h5 id="h5-ujm-stepref">ujm:StepRef</h5>
         <p>
           A <code>StepRef</code> references a <a>Step</a> within a grouping and may specify an ordering.
         </p>
@@ -500,7 +500,7 @@ For deterministic composition:
     </section>
 
     <section data-dfn-for="Channel">
-      <h4><dfn>ujm:Channel</dfn></h4>
+      <h4 id="h4-ujm-channel"><dfn>ujm:Channel</dfn></h4>
       <p>
         <code>Channel</code> is a controlled design-time term identifying interaction channels
         (e.g., <code>ujm:Web</code>, <code>ujm:MobileApp</code>, <code>ujm:Phone</code>,
@@ -510,7 +510,7 @@ For deterministic composition:
     </section>
 
     <section data-dfn-for="Touchpoint">
-      <h4><dfn>ujm:Touchpoint</dfn></h4>
+      <h4 id="h4-ujm-touchpoint"><dfn>ujm:Touchpoint</dfn></h4>
       <p>
         A <code>Touchpoint</code> is a design-time description of a user interaction surface or location.
       </p>
@@ -546,7 +546,7 @@ For deterministic composition:
     </section>
 
     <section id="persona">
-      <h4><dfn>ujm:Persona</dfn></h4>
+      <h4 id="h4-ujm-persona"><dfn>ujm:Persona</dfn></h4>
       <p>
         <code>Persona</code> is an imported design-time archetype. Journeys and Steps MAY reference Personas
         to describe intended audiences or segments.
@@ -561,7 +561,7 @@ For deterministic composition:
 </section>
 
 <section id="execution-model" class="normative">
-  <h2>Execution and Analytics Model (Runtime)</h2>
+  <h2 id="h2-execution-and-analytics-model-runtime">Execution and Analytics Model (Runtime)</h2>
   <p>
     This section defines runtime classes that represent concrete executions of design-time <a>Journey</a> definitions,
     and aggregated analytics derived from those executions.
@@ -569,7 +569,7 @@ For deterministic composition:
   </p>
 
   <section id="privacy" class="informative">
-  <h3>Privacy and Personal Data</h3>
+  <h3 id="h3-privacy-and-personal-data">Privacy and Personal Data</h3>
   <p>
     This specification is designed primarily for <strong>structural journey models</strong>
     and <strong>aggregated analytics</strong>. It does not require the collection of any
@@ -596,7 +596,7 @@ For deterministic composition:
 
 
   <section id="emotion-metric" data-dfn-for="Emotion Metric">
-    <h3><dfn>ujm:Emotion</dfn> and <dfn>ujm:Metric</dfn></h3>
+    <h3 id="h3-ujm-emotion-and-ujm-metric"><dfn>ujm:Emotion</dfn> and <dfn>ujm:Metric</dfn></h3>
     <p>
       <code>Emotion</code> and <code>Metric</code> are imported runtime and analytics constructs.
       They are used exclusively on runtime and analytics resources such as <a>StepEvent</a> and
@@ -621,7 +621,7 @@ For deterministic composition:
   </section>
 
   <section data-dfn-for="JourneyRun">
-    <h3><dfn>ujm:JourneyRun</dfn></h3>
+    <h3 id="h3-ujm-journeyrun"><dfn>ujm:JourneyRun</dfn></h3>
     <p>
       A <code>JourneyRun</code> represents a single concrete execution (by a user, technical session, account,
       or cohort) of a design-time <a>Journey</a>.
@@ -683,7 +683,7 @@ For deterministic composition:
   </section>
 
   <section data-dfn-for="StepEvent">
-    <h3><dfn>ujm:StepEvent</dfn></h3>
+    <h3 id="h3-ujm-stepevent"><dfn>ujm:StepEvent</dfn></h3>
     <p>
       A <code>StepEvent</code> represents one concrete occurrence of a design-time <a>Step</a> within a
       <a>JourneyRun</a>. It is the canonical location for recording observed timestamps, durations, metrics,
@@ -770,7 +770,7 @@ For deterministic composition:
   </section>
 
   <section data-dfn-for="StepStatistics">
-    <h3><dfn>ujm:StepStatistics</dfn></h3>
+    <h3 id="h3-ujm-stepstatistics"><dfn>ujm:StepStatistics</dfn></h3>
     <p>
       A <code>StepStatistics</code> resource captures aggregated metrics or emotion distributions for a given
       design-time <a>Step</a> over a defined set of <a>StepEvent</a>s (e.g., a time window, cohort, or experiment).
@@ -837,7 +837,7 @@ For deterministic composition:
   </section>
 
   <section id="runtime-relationships">
-    <h3>Relationship to Phases, Sessions, and CallStep</h3>
+    <h3 id="h3-relationship-to-phases-sessions-and-callstep">Relationship to Phases, Sessions, and CallStep</h3>
     <ul>
       <li>
         <strong>Phases and Sessions.</strong>
@@ -863,7 +863,7 @@ For deterministic composition:
 </section>
 
 <section id="json-ld" class="normative">
-  <h2>JSON-LD</h2>
+  <h2 id="h2-json-ld">JSON-LD</h2>
   <p>
     This section provides a normative JSON-LD context for compact JSON representations of UJM resources.
     Implementations MAY extend this context but MUST preserve the semantics of terms defined here.
@@ -872,7 +872,7 @@ For deterministic composition:
   <aside class="example" title="UJM JSON-LD Context">
     <pre class="json">{
   "@context": {
-    "@vocab": "https://www.w3.org/ns/ujm#",
+    "@vocab": "https://www.openuji.org/ns/ujm#",
 
     "schema": "https://schema.org/",
     "prov": "http://www.w3.org/ns/prov#",
@@ -922,7 +922,7 @@ For deterministic composition:
 </section>
 
 <section id="implementation-profile" class="informative">
-  <h2>Implementation Profile Example</h2>
+  <h2 id="h2-implementation-profile-example">Implementation Profile Example</h2>
   <p>
     This section provides a concise end-to-end example showing:
   </p>
@@ -941,7 +941,7 @@ For deterministic composition:
 </section>
 
 <section id="appendix-json-schema" class="appendix informative">
-  <h2>Appendix A: JSON Schema (Illustrative Extract)</h2>
+  <h2 id="h2-appendix-a-json-schema-illustrative-extract">Appendix A: JSON Schema (Illustrative Extract)</h2>
   <p>
     This appendix sketches JSON Schema fragments aligned with the design-time / runtime split.
     The schema targets the compact JSON form used together with the JSON-LD context in

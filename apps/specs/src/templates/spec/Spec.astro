@@ -1,0 +1,21 @@
+---
+import styles from './Spec.module.css';
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+export interface Props {
+  title: string
+  sections: string
+  toc: string
+}
+const { title, sections, toc } = Astro.props;
+---
+<BaseLayout title={title}>
+  
+  <div class={styles.specTemplate}>
+    <aside class={styles.toc} set:html={toc}/>
+    <main class={styles.content} set:html={sections}/>
+  </div>
+    
+  </SpecTemplate>
+</BaseLayout>

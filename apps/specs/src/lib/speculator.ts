@@ -24,6 +24,8 @@ export async function renderSpecFromFile(relativeSpecPath: string, opts: RenderO
   });
 
   const result = await speculator.renderHTML(specHtml);
+  
+  console.log(`Speculator rendered ${Object.keys(result)} with ${result.warnings.length} warnings.`);
 
-  return { html: result.html, warnings: result.warnings };
+  return result;
 }

@@ -1,0 +1,9 @@
+@reference '#main.css';
+
+.specTemplate {
+ 
+  display: flex;
+  gap: --spacing(4);
+  margin-top: --spacing(8);
+
+}

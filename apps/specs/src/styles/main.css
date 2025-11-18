@@ -1,0 +1,52 @@
+/* 1. Pull in Tailwind (theme + preflight + utilities) */
+@import "tailwindcss";
+
+/* 2. Define your design tokens */
+@theme {
+  /* Typography */
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-body: 1rem;
+  --leading-body: 1.5;
+
+  /* Brand colors */
+  --color-primary-500: oklch(0.72 0.18 260); /* just an example */
+  --color-primary-600: oklch(0.65 0.19 260);
+
+  /* Base spacing scale (optional) */
+  --spacing: 0.25rem; /* 1 unit */
+}
+
+/* 3. Global “base” styles using @apply + theme tokens */
+:root {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--color-slate-900);
+  background: var(--color-slate-50);
+}
+
+body {
+  @apply antialiased;
+}
+
+/* Example typography scale */
+h1 {
+  @apply text-3xl font-semibold tracking-tight;
+}
+
+h2 {
+  @apply text-2xl font-semibold;
+}
+
+h3 {
+  @apply text-xl font-semibold;
+}
+
+h4 {
+  @apply text-lg font-semibold;
+}
+
+p {
+  @apply text-base leading-relaxed text-slate-700;
+}
+

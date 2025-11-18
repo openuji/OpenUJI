@@ -1,5 +1,5 @@
 ---
-import SpecLayout from "@/layouts/SpecLayout.astro";
+import SpecTemplate from "@/templates/spec/Spec.astro";
 import { renderSpecFromFile } from "@/lib/speculator";
 import { listSpecs } from "@/lib/spec-index";
 
@@ -14,20 +14,17 @@ export async function getStaticPaths() {
 
 const { indexPath, spec, version } = Astro.props;
 
-let html = '';
+let specData: { sections: string; warnings?: string[], toc: string } = { sections: '', toc: '' };
 try {
-  const result = await renderSpecFromFile(indexPath);
-  html = result.html;
-  if (result.warnings?.length) {
-    console.warn(`[Speculator] ${spec}@${version}`, result.warnings);
+  specData = await renderSpecFromFile(indexPath);
+  if (specData.warnings?.length) {
+    console.warn(`[Speculator] ${spec}@${version}`, specData.warnings);
   }
 } catch (err) {
   console.error(`[Speculator] Error rendering ${spec}@${version}`, err);
   Astro.response.status = 404;
-  html = `<article><h1>Spec not found</h1><p>Missing: ${indexPath}</p></article>`;
+  specData.sections = `<article><h1>Spec not found</h1><p>Missing: ${indexPath}</p></article>`;
 }
 ---
 
-<SpecLayout title={`${spec.toUpperCase()} ${version}`}>
-  <div set:html={html} data-format="html" />
-</SpecLayout>
+<SpecTemplate title={`${spec.toUpperCase()} ${version}`} sections={specData.sections} toc={specData.toc} />
