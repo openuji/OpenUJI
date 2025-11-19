@@ -1,0 +1,5 @@
+@import '#main.css';
+
+.homeTemplate {
+  @apply p-8;
+}

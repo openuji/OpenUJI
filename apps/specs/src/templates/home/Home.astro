@@ -1,0 +1,23 @@
+---
+import Header from '@/components/header/Header.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import styles from './Home.module.css';
+
+const { specs } = Astro.props;
+
+---
+
+
+<BaseLayout title="OpenUJI Specifications" className="markdown-body">
+	<Header />
+
+  <div class={styles.homeTemplate}>
+  <ul>
+    {specs.map(s => (
+      <li>
+        <a href={`/${s.spec}/${s.version}`}>{s.spec.toUpperCase()} {s.version}</a>
+      </li>
+    ))}
+  </ul>
+  </div>
+</BaseLayout>

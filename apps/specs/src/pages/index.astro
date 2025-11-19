@@ -1,17 +1,7 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
 import { listSpecs } from "@/lib/spec-index";
 const specs = await listSpecs();
+import HomeTemaplate from "@/templates/home/Home.astro";
 ---
 
-<BaseLayout title="OpenUJI Specifications" className="markdown-body">
-	<h1>Specifications</h1>
-
-<ul>
-	{specs.map(s => (
-		<li>
-			<a href={`/${s.spec}/${s.version}`}>{s.spec.toUpperCase()} {s.version}</a>
-		</li>
-	))}
-</ul>
-</BaseLayout>
+<HomeTemaplate specs={specs} />
