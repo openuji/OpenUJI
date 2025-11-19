@@ -285,7 +285,7 @@ export const Toc = ({
          container.scrollTo({ top: linkBottom - container.clientHeight + padding, behavior: "smooth" });
       }
 
-       console.log('Scrolling TOC to active link:', { linkTop, linkBottom, containerTop, containerBottom });
+       //console.log('Scrolling TOC to active link:', { linkTop, linkBottom, containerTop, containerBottom });
       
       
     }, [activeId]);
