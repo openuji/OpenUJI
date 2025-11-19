@@ -1,5 +1,7 @@
 ---
-import Toolbar from '@/components/toolbar/Toolbar.astro';
+
+import  Tool from '@/components/toolbar/Toolbar.astro';
+import {Toolbar} from '@/components/toolbar/Toolbar';
 import styles from './Spec.module.css';
 import {Toc, buildNestedToc} from '@/components/toc/Toc';
 import type { FlatTocItem } from '@/components/toc/Toc';
@@ -52,9 +54,9 @@ const nestedTocItems = buildNestedToc(flatTocItems);
         </div>
       </article>
     </main>
-    <section>
-    <Toolbar />
-  </section>
+    <div class=`${styles.toolbar}`>
+    <Toolbar client:only />
+    </div>
   </div>
     
 </BaseLayout>

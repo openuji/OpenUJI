@@ -214,7 +214,7 @@ const TocTree = ({
   LinkComponent = DefaultLink,
 }: TocTreeProps) => {
   const indentClass =
-    level === 0 ? "" : level === 1 ? "ml-2" : "ml-4"; // simple manual indent
+    level === 0 ? " " : level === 1 ? "ml-2" : "ml-4"; // simple manual indent
 
 return (
     <ul
@@ -300,11 +300,11 @@ export const Toc = ({
           lg:block
         "
       >
-        <div className="border-r bg-background px-4">
+        <div className="border-r bg-sidebar px-4">
           {/* <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {title}
           </h2> */}            
-            <div ref={tocContainerRef} className="h-[calc(100svh)] overflow-y-auto py-3" >
+            <div ref={tocContainerRef} className="h-[calc(100svh)] overflow-y-auto py-6" >
               <TocTree items={items} activeId={activeId} />
             </div>            
         </div>
