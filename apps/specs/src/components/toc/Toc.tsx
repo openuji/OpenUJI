@@ -243,8 +243,29 @@ export const Toc = ({
     const allIds = React.useMemo(() => flattenTocIds(items), [items]);
     const tocContainerRef = React.useRef<HTMLDivElement | null>(null);
     const activeId = useActiveHeading(allIds);
+    const scrollDir = React.useRef<"up" | "down" | null>(null);
+
+    useEffect(() => {
+      let lastScrollY = window.scrollY;
+
+      const onScroll = () => {
+        const currentScrollY = window.scrollY;
+        if (currentScrollY > lastScrollY) {
+          scrollDir.current = "down";
+        } else if (currentScrollY < lastScrollY) {
+          scrollDir.current = "up";
+        }
+        lastScrollY = currentScrollY;
+      };
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      return () => {
+        window.removeEventListener("scroll", onScroll);
+      };
+    }, []);
 
     useEffect(() => { 
+      const padding = 24;
       const container = tocContainerRef.current;
       if (!container || !activeId) return;
 
@@ -257,11 +278,11 @@ export const Toc = ({
       const linkBottom = linkTop + activeLink.offsetHeight;
       const containerTop = container.scrollTop;
       const containerBottom = containerTop + container.clientHeight;
-      if (linkTop > containerBottom) {
-        container.scrollTo({ top: linkTop - 20, behavior: "smooth" });
+      if (linkTop > containerBottom && scrollDir.current === "down") {
+        container.scrollTo({ top: linkTop - padding, behavior: "smooth" });
       } 
-      else if (linkBottom > containerTop) {
-         container.scrollTo({ top: linkBottom - container.clientHeight + 20, behavior: "smooth" });
+      else if (linkBottom < containerTop && scrollDir.current === "up") {
+         container.scrollTo({ top: linkBottom - container.clientHeight + padding, behavior: "smooth" });
       }
 
        console.log('Scrolling TOC to active link:', { linkTop, linkBottom, containerTop, containerBottom });
