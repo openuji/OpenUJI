@@ -1,0 +1,15 @@
+@import '#main.css';
+.header {
+
+  width: 100%;
+  display: flex;
+
+  padding-block: --spacing(4);
+  border-bottom: 1px solid var(--color-border);
+
+  .logo {
+    margin-right: auto;
+    width: 300px;
+  }
+
+}

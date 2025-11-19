@@ -2,19 +2,33 @@
 
 .specTemplate {
  
-  display: flex;
-  gap: --spacing(4);
-  margin-top: --spacing(8);
+  @variant lg {
+    display: flex;
+    gap: --spacing(4);  
+    > main {
+      flex: 1;
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 0;
+      width: var(--toc-width);
+      border-right: 1px solid var(--color-border);
+
+    }
+  }
+  
+  
 
   aside.toc {
     position: sticky;
     height: 100svh;
-    top: 0;
     overflow-y: auto;
-    width: var(--toc-width);
     background-color: var(--sidebar-bg);
-    border-right: 1px solid var(--sidebar-border);
+    
     padding: --spacing(4);
+
+  
 
     /* 2. Reset List Styles */
     ol {
@@ -87,9 +101,7 @@
         
   }
 
-  main {
-    flex: 1;
-  }
+  
 
    section {
     margin-block: --spacing(6);

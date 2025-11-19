@@ -2,8 +2,8 @@
 export interface Props {
   title: string
   className?: string
-  
 }
+import Footer from '@/components/footer/Footer.astro';
 const { title, className } = Astro.props;
 
 import '@/styles/main.css';
@@ -17,10 +17,6 @@ import '@/styles/main.css';
   </head>
   <body class={className || ''}>
     <slot />  
-     <footer>
-        <div>
-          © {new Date().getFullYear()} OpenUJI — Specs.
-        </div>
-      </footer>
+     <Footer />
   </body>
 </html>

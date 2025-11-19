@@ -47,7 +47,6 @@
   --ring: #4338ca;
 
   --sidebar-bg: #FBFBFD;
-  --sidebar-border: #E3E8EF;
   
   /* Semantic colors */
   --info: #0ea5e9;
@@ -98,7 +97,8 @@
   --sidebar-ring: #4338ca;
 
   /* typography */
-  --font-size: calc(100% / 1.142857142857143); /* 14px base */
+  /* --font-size: calc(100% / 1.142857142857143); 14px base */
+  --font-size: calc(100% * 1); /* 14px base */
   
   /* Typography scale - Desktop (rem, comment shows px equivalent) */
   --text-h1-desktop: 1.75rem;   /* 28px */
@@ -367,12 +367,9 @@
     border-radius: var(--radius-sm);
   }
   
-  /* Ensure minimum tap target size */
-  button, a, input, select, textarea {
-    min-height: 44px;
-    min-width: 44px;
-  }
+  
 }
+
 
 /* Print styles */
 @media print {
@@ -490,7 +487,12 @@
 
 /* Utility classes for responsive constraints */
 @layer utilities {
- .content-width {
+
+  .fluid-container {
+    @apply px-6 mx-auto;
+  }
+
+  .content-width {
     max-width: 100%;
     width: 100%;
 
@@ -510,6 +512,8 @@
   .text-pretty {
     text-wrap: pretty;
   }
+
+
 }
 
 html {
