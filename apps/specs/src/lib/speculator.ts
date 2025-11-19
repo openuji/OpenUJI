@@ -20,6 +20,7 @@ export async function renderSpecFromFile(relativeSpecPath: string, opts: RenderO
     baseUrl: new URL('./', specFileUrl).toString(),
     postprocess: {
       xref: [{ resolver: xrefResolver, specs: opts.xrefSpecs ?? defaultXrefSpecs }],
+      toc: { render: false}
     },
   });
 

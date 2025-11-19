@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 
+import react from '@astrojs/react';
+
 const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url)); // adjust as needed
 
 const SPEC_DIR = fileURLToPath(new URL('../../spec', import.meta.url)); // monorepo /spec
@@ -34,5 +36,7 @@ export default defineConfig({
     define: { 'import.meta.env.SPEC_DIR': JSON.stringify(SPEC_DIR) },
     plugins: [tailwindcss()],
   
-}
+},
+
+  integrations: [react()]
 });

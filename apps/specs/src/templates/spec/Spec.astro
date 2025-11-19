@@ -1,6 +1,8 @@
 ---
-import Toolbar from '@/components/toolbar/Toolbar.astro';
+import {Toolbar} from '@/components/toolbar/Toolbar';
 import styles from './Spec.module.css';
+import {Toc, buildNestedToc} from '@/components/toc/Toc';
+import type { FlatTocItem } from '@/components/toc/Toc';
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { wrap as preWrap } from './utils/pre-wrapper';
@@ -25,15 +27,19 @@ sectionsArray.forEach(s => {
   }
 
 });
-
+const flatTocItems = toc as unknown as FlatTocItem[];
+const nestedTocItems = buildNestedToc(flatTocItems);
 ---
 <BaseLayout title={title}>
   <Header />
   
   <div class={styles.specTemplate}>
-    <aside class={styles.toc} set:html={toc}/>
-    <main class={`${styles.content}`}>
-      <section class="content-width fluid-container">
+    <!-- <aside class={styles.toc} set:html={toc}/> -->
+           <Toc client:load items={nestedTocItems} />
+
+    <main>
+    
+      <article class="content-width fluid-container">
         <header>
           <h1>{metaData?.title ?? title}</h1>
           <p>{metaData?.shortName}</p>
@@ -44,11 +50,11 @@ sectionsArray.forEach(s => {
             <div set:html={section} />
           ))}
         </div>
-      </section>
+      </article>
     </main>
-    <section>
-    <Toolbar />
-  </section>
+    <div class=`${styles.toolbar}`>
+    <Toolbar client:only />
+    </div>
   </div>
     
 </BaseLayout>
