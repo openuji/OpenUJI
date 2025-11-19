@@ -1,21 +1,27 @@
 @reference '#main.css';
 
 .specTemplate {
+
+  article, section {
+    margin-block: --spacing(6);
+  }
  
   @variant lg {
     display: flex;
     gap: --spacing(4);  
     > main {
       flex: 1;
+      
+      /* aside {
+        position: sticky;
+        top: 0;
+        width: var(--toc-width);
+        border-right: 1px solid var(--color-border);
+
+      } */
     }
 
-    aside.toc {
-      position: sticky;
-      top: 0;
-      width: var(--toc-width);
-      border-right: 1px solid var(--color-border);
-
-    }
+    
   }
   
   
@@ -103,9 +109,7 @@
 
   
 
-   section {
-    margin-block: --spacing(6);
-  }
+ 
 
   .contentSections {
 
