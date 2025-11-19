@@ -24,7 +24,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@openuji/speculator": "^0.3.1",
+    "@openuji/speculator": "^0.3.2",
     "@tailwindcss/vite": "^4.1.17",
     "chokidar-cli": "^3.0.0",
     "esbuild": "^0.25.12",
