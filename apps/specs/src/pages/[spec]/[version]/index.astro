@@ -1,28 +1,25 @@
 ---
 import SpecTemplate from "@/templates/spec/Spec.astro";
-import { renderSpecFromFile, loadJson } from "@/lib/speculator";
+import { renderSpecFromFile } from "@/lib/speculator";
 import { listSpecs } from "@/lib/spec-index";
 
 export async function getStaticPaths() {
   // Add more products here if needed (or discover them similarly)
   const specs = await listSpecs();
-  return specs.map(({ spec, version, indexPath, respecPath }) => ({
+  return specs.map(({ spec, version, indexPath, respecPath, metaData }) => ({
     params: { spec, version },
-    props: { indexPath, respecPath, spec, version }
+    props: { indexPath, respecPath, spec, version, metaData },
   }));
 }
 
-const { indexPath, spec, respecPath, version } = Astro.props;
+const { indexPath, spec, version, metaData } = Astro.props;
 
 let specData: { sections: string; warnings?: string[], toc: string } = { sections: '', toc: '' };
-let metaData: Record<string, any> = {};
+;
 try {
   specData = await renderSpecFromFile(indexPath);
-  if (respecPath) {
-    const respecMeta = await loadJson(respecPath);
-    metaData = respecMeta || {};
-  }
-
+  
+  
   if (specData.warnings?.length) {
     console.warn(`[Speculator] ${spec}@${version}`, specData.warnings);
   }

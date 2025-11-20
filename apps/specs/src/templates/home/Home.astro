@@ -15,7 +15,9 @@ const { specs } = Astro.props;
   <ul>
     {specs.map(s => (
       <li>
-        <a href={`/${s.spec}/${s.version}`}>{s.spec.toUpperCase()} {s.version}</a>
+        <a href={`/${s.spec}/${s.version}`}>
+          {s.metaData.title ??  s.spec.toUpperCase() } ({s.spec.toUpperCase()}) 
+        {s.version}</a>
       </li>
     ))}
   </ul>

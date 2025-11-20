@@ -1,0 +1,13 @@
+{
+  "specStatus": "ED",
+  "title": "User Journey Hashed-Chain Tracking",
+  "shortName": "ujht",
+  "editors": [
+    {
+      "name": "TBD",
+      "company": "TBD"
+    }
+  ],
+  "github": "https://github.com/openuji/OpenUJI-Specs/tree/main/spec/ujht/1.0-draft",
+  "lint": { "no-headingless-sections": false }
+}

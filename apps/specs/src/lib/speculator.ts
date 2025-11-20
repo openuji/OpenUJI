@@ -30,11 +30,3 @@ export async function renderSpecFromFile(relativeSpecPath: string, opts: RenderO
   return result;
 }
 
-export async function loadJson(jsonPath: string): Promise<any> {
-  const SPEC_DIR = (import.meta as any).env?.SPEC_DIR as string | undefined;
-  if (!SPEC_DIR) throw new Error('SPEC_DIR is not configured');
-
-  const fullPath = path.join(SPEC_DIR, jsonPath);
-  const jsonData = await fs.readFile(fullPath, 'utf8');
-  return JSON.parse(jsonData);
-}

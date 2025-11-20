@@ -9,6 +9,7 @@ export type SpecEntry = {
   indexPath: string;    // e.g., "ujse/1.0/index.spec.html"
   respecPath?: string;   // e.g., "ujse/1.0/respec.json"
   route: string;        // e.g., "/ujse/1.0/"
+  metaData: { [key: string]: any };
 };
 
 export async function listSpecs(): Promise<SpecEntry[]> {
@@ -28,13 +29,15 @@ export async function listSpecs(): Promise<SpecEntry[]> {
       try {
         await fs.access(path.join(SPEC_DIR, indexRel));
         let respecPath: string | undefined;
+        let metaData: { [key: string]: any } = {};
         try {
           await fs.access(path.join(SPEC_DIR, respecRel));
+          metaData = await loadJson(respecRel);
           respecPath = respecRel;
         } catch {
           // no respec.json, that's fine
         }
-        entries.push({ spec, version, indexPath: indexRel, respecPath, route: `/${spec}/${version}/` });
+        entries.push({ spec, version, indexPath: indexRel, respecPath, metaData, route: `/${spec}/${version}/` });
       } catch {
         // skip if no index.spec.html
       }
@@ -44,4 +47,14 @@ export async function listSpecs(): Promise<SpecEntry[]> {
   // stable ordering: newest-ish last segment first
   entries.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true, sensitivity: 'base' }));
   return entries;
+}
+
+
+export async function loadJson(jsonPath: string): Promise<any> {
+  const SPEC_DIR = (import.meta as any).env?.SPEC_DIR as string | undefined;
+  if (!SPEC_DIR) throw new Error('SPEC_DIR is not configured');
+
+  const fullPath = path.join(SPEC_DIR, jsonPath);
+  const jsonData = await fs.readFile(fullPath, 'utf8');
+  return JSON.parse(jsonData);
 }
