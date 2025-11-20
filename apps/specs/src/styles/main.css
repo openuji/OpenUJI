@@ -448,6 +448,11 @@
     @apply bg-muted/50 z-20;
   }
 
+  table td code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   /* Edge fade gradient */
   .simple-table-fade {
     background-image: linear-gradient(
