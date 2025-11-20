@@ -1,29 +1,3 @@
-<header>
-  <h1>User Journey Hashed Step Tracking (UJHST) 1.0 — Editor’s Draft (Hybrid Control-Plane Update)</h1>
-  <p class="subtitle">Short name: <code>ujhst</code> • Status: Editor’s Draft</p>
-</header>
-
-<nav class="toc" aria-label="Table of contents">
-  <h2>Contents</h2>
-  <ol>
-    <li><a href="#abstract">Abstract</a></li>
-    <li><a href="#sotd">Status of This Document</a></li>
-    <li><a href="#intro">Introduction</a></li>
-    <li><a href="#conformance">Conformance</a></li>
-    <li><a href="#terms">Terminology</a></li>
-    <li><a href="#model">Data Model</a></li>
-    <li><a href="#client">Client Processing Model</a></li>
-    <li><a href="#transport">Transport</a></li>
-    <li><a href="#preferences">User Preference Signaling</a></li>
-    <li><a href="#server">Server Processing Model</a></li>
-    <li><a href="#catalog">Journey Catalog (Control Plane)</a></li>
-    <li><a href="#interop">Interoperability and OpenTelemetry Mapping</a></li>
-    <li><a href="#privacy">Privacy Requirements</a></li>
-    <li><a href="#security">Security Considerations</a></li>
-    <li><a href="#json-schema">JSON Schema</a></li>
-  </ol>
-</nav>
-
 <section id="abstract">
   <p>
     User Journey Hashed Step Tracking (UJHST) defines a privacy-preserving mechanism for measuring a visitor’s in-session navigation path ("user journey") without cookies, local persistent identifiers, or device fingerprinting. UJHST relies on an ephemeral, client-held secret seed to compute a one-way hash chain across sequential events. Each transmitted event contains only the current hash, the previous hash, and a minimal payload. Servers stitch events into journeys by matching <code>prev → curr</code> edges without learning or inferring a stable user identifier.

@@ -30,6 +30,7 @@ type TocItem = {
 export function buildNestedToc(flatItems: FlatTocItem[]): TocItem[] {
   const root: TocItem[] = [];
   const stack: { depth: number; node: TocItem }[] = [];
+  if(!Array.isArray(flatItems)) return root;
 
   for (const item of flatItems) {
     const node: TocItem = { id: item.id, title: item.text };
