@@ -7,12 +7,13 @@ export type DomainKind =
   | "bounded"
   | "end-unbounded"
   | "all-unbounded"
-  | "circular";
+  | "circular-unbounded"     // new: old circular semantics
+  | "circular-end-unbounded"
 export interface DomainDescriptor {
   kind: DomainKind;
   min?: number | null;
   max?: number | null;
-  period?: number; // required > 0 when kind === "circular"
+  period?: number | null; // required > 0 when kind === "circular-unbounded" | "circular-end-unbounded"
 }
 
 export interface EngineScrollToOptions {
@@ -30,8 +31,8 @@ export interface FrameInfo {
   velocity: number;
   direction: ScrollDirection;
   dt: number;
-  progress: number | null; // bounded [0,1], circular [0,1), unbounded null
-  limit: number | null; // bounded range, circular period, unbounded null
+  progress: number | null; // bounded [0,1], circular* [0,1), unbounded null
+  limit: number | null; // bounded range, circular* period, unbounded null
   domain: DomainKind;
 }
 
@@ -121,6 +122,63 @@ export interface ScrollDriver {
 }
 
 export type InputModule = (emit: (delta: number) => void) => () => void;
+
+export interface DomainRuntime {
+  /** Effective period / limit of the domain (null = unbounded). */
+  readonly limit: number | null;
+
+  /** Clamp a canonical value into the domain. */
+  clamp(value: number): number;
+
+  /**
+   * Align a canonical value onto the closest cycle relative to a reference.
+   * For non-circular domains this is just identity.
+   */
+  align(value: number, reference: number): number;
+
+  /**
+   * Compute delta between two canonical positions, respecting wrapping if needed.
+   */
+  delta(current: number, previous: number): number;
+
+  /**
+   * Given a desired position and current reference, compute:
+   * - `target`: the internal logical target (can span multiple cycles)
+   * - `canonical`: the clamped/canonical coordinate we report externally
+   */
+  projectTarget(
+    desired: number,
+    reference: number,
+  ): { target: number; canonical: number };
+
+  /**
+   * Apply an impulse to the current target, respecting domain semantics
+   * (including the "no wrap on negative" rule for circular-end-unbounded).
+   */
+  applyImpulse(
+    currentTarget: number,
+    impulse: number,
+    motionValue: number,
+    direction: ScrollDirection,
+  ): { target: number; canonical: number };
+
+  /**
+   * Convert an internal “next” logical value into:
+   * - `canonical` to write to the driver
+   * - `logical` to store as engine's motionValue
+   */
+  mapPosition(
+    next: number,
+    currentLogical: number,
+  ): { canonical: number; logical: number };
+
+  /**
+   * Stateless “what canonical would this logical target correspond to”.
+   * Used for settle info.
+   */
+  canonicalOf(logical: number): number;
+}
+
 
 export interface ScrollEngineOptions {
   driver: ScrollDriver;

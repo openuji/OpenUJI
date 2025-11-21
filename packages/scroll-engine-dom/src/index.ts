@@ -1,5 +1,6 @@
 export * from "./dom";
 export type { Scheduler, ScrollDriver, ScrollEngine } from "./core";
+import { clamp, DomainDescriptor, DomainRuntime, modulo, Scheduler, ScrollDriver, ScrollEngine } from "./core";
 
 import { EngineWithMiddlewareBuilder } from "./builder";
 import { sessionStoragePersistence } from "./middleware/sessionStoragePersistence";
@@ -10,7 +11,9 @@ import {
   touchInput,
   expAnimator,
 } from "./dom";
-import { Scheduler, ScrollDriver, ScrollEngine } from "./core";
+
+
+
 
 export const defaultScrollEngine = (): ScrollEngine =>
   new EngineWithMiddlewareBuilder()
@@ -34,7 +37,7 @@ function createVirtualCircularDriver(): ScrollDriver {
     ...base,
     domain: () => {
       const lim = Math.max(0, base.limit());
-      return { kind: "circular", min: 0, max: lim, period: lim } as const;
+      return { kind: "circular-end-unbounded", min: 0, max: lim, period: lim } as const;
     },
   };
 }
@@ -43,6 +46,7 @@ export const circularScrollEngine = (
   scheduler: Scheduler = createRafScheduler(),
 ): ScrollEngine => {
   const driver = createVirtualCircularDriver();
+  console.log("circularScrollEngine created with driver:", driver);
   return new EngineWithMiddlewareBuilder()
     .withOptions({
       driver,

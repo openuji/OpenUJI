@@ -12,7 +12,9 @@ import type {
   SettleInfo,
   ScrollEngine,
   DomainDescriptor,
+  DomainRuntime,
 } from "./core";
+import { createDomainRuntime } from "./domain";
 
 export function createRafScheduler(): Scheduler {
   let handle: number | null = null;
@@ -85,6 +87,7 @@ export const wheelInput = ({
               : window.innerHeight
             : 1;
       const delta = e[ax.deltaKey];
+      console.log("wheelInput delta:", delta, "multiplier:", multiplier, "mult:", mult);
       emit(delta * mult * multiplier);
       if (e.cancelable) e.preventDefault();
     };
@@ -197,6 +200,8 @@ export class ScrollEngineDOM implements ScrollEngine {
   private inputs: Array<(emit: (d: number) => void) => () => void>;
   private plugins: ScrollEnginePlugin[];
 
+  private readonly domain: DomainRuntime; // <— here
+
   // reactive state
   private signal = new ScrollSignal();
   private destroyers: Array<() => void> = [];
@@ -228,6 +233,11 @@ export class ScrollEngineDOM implements ScrollEngine {
     this.animator = animator;
     this.scheduler = scheduler;
     this.plugins = plugins;
+
+    this.domain = createDomainRuntime(
+      () => this.driver.domain?.(),
+      () => this.driver.limit(),
+    );
   }
 
   /** Seed BEFORE init() — no jump. */
@@ -245,6 +255,8 @@ export class ScrollEngineDOM implements ScrollEngine {
     this.direction = 0;
   }
 
+
+
   /** Wire listeners, inputs, plugins, signals. Call exactly once. */
   init() {
     if (this.initialized) return;
@@ -256,7 +268,7 @@ export class ScrollEngineDOM implements ScrollEngine {
         this.signal.set(p, "user");
         const domain = this.resolveDomain();
         const limit = this.computeLimit(domain);
-        if (domain.kind === "circular" && limit && limit > 0) {
+        if (this.isCircular(domain, limit)) {
           this.motionValue = this.alignToCycle(p, limit, this.motionValue);
         } else {
           this.motionValue = p;
@@ -279,7 +291,7 @@ export class ScrollEngineDOM implements ScrollEngine {
       const domain = this.resolveDomain();
       const limit = this.computeLimit(domain);
       let delta = p - this.prev;
-      if (domain.kind === "circular" && limit && limit > 0) {
+      if (this.isCircular(domain, limit) && limit !== null) {
         if (delta > limit / 2) delta -= limit;
         else if (delta < -limit / 2) delta += limit;
       }
@@ -309,7 +321,7 @@ export class ScrollEngineDOM implements ScrollEngine {
     if (immediate) {
       this.target = target;
       const written = this.applyPosition(canonical, domain, limit);
-      if (domain.kind === "circular" && limit && limit > 0) {
+      if (this.isCircular(domain, limit)) {
         this.target = this.motionValue; // keep logical target on same cycle
       }
       this.plugins.forEach((p) => p.onTargetChange?.(canonical));
@@ -361,13 +373,23 @@ export class ScrollEngineDOM implements ScrollEngine {
     switch (domain.kind) {
       case "bounded":
         return Math.max(0, this.driver.limit());
-      case "circular":
-        return domain.period ?? null;
+      case "circular-unbounded":
+      case "circular-end-unbounded": {
+        const period = domain.period ?? Math.max(0, this.driver.limit());
+        return period > 0 ? period : null;
+      }
       case "end-unbounded":
       case "all-unbounded":
       default:
         return null;
     }
+  }
+
+  private isCircular(domain: DomainDescriptor, limit: number | null): boolean {
+    return (
+      domain.kind === "circular-unbounded" ||
+      domain.kind === "circular-end-unbounded"
+    )  && limit !== null && limit > 0;
   }
 
   private clampToDomain(
@@ -385,8 +407,21 @@ export class ScrollEngineDOM implements ScrollEngine {
         return Math.max(min, value);
       case "all-unbounded":
         return value;
-      case "circular":
+      case "circular-unbounded":
         return limit && limit > 0 ? modulo(value, limit) : value;
+      case "circular-end-unbounded": {
+        if (!limit || limit <= 0) {
+          // degrade gracefully to end-unbounded behaviour
+          return Math.max(min, value);
+        }
+
+        // TOP is bounded: do NOT wrap if we go "above" min
+        if (value <= min) return min;
+
+        // END is circular: going past max wraps back to the start of the cycle
+        // canonical range is [min, min + limit)
+        return min + modulo(value - min, limit);
+      }
       default:
         return value;
     }
@@ -399,7 +434,7 @@ export class ScrollEngineDOM implements ScrollEngine {
     reference: number,
   ): { target: number; canonical: number } {
     const canonical = this.clampToDomain(desired, domain, limit);
-    if (domain.kind === "circular" && limit && limit > 0) {
+    if (this.isCircular(domain, limit)) {
       return {
         target: this.alignToCycle(canonical, limit, reference),
         canonical,
@@ -414,11 +449,15 @@ export class ScrollEngineDOM implements ScrollEngine {
     domain: DomainDescriptor,
     limit: number | null,
   ): { target: number; canonical: number } {
-    if (domain.kind === "circular" && limit && limit > 0) {
+    if (this.isCircular(domain, limit) ) {
+      
+      if(!(domain.kind === "circular-end-unbounded" && this.direction < 0 )) {
       const raw = currentTarget + impulse;
       const target = this.alignToCycle(raw, limit, this.motionValue);
       const canonical = this.clampToDomain(target, domain, limit);
       return { target, canonical };
+      }
+
     }
     const next = this.clampToDomain(currentTarget + impulse, domain, limit);
     return { target: next, canonical: next };
@@ -426,10 +465,10 @@ export class ScrollEngineDOM implements ScrollEngine {
 
   private alignToCycle(
     value: number,
-    limit: number,
+    limit: number | null,
     reference: number,
   ): number {
-    if (!Number.isFinite(limit) || limit <= 0) return value;
+    if (!Number.isFinite(limit) || limit === null || limit <= 0) return value;
     const rev = Math.round((reference - value) / limit);
     return value + rev * limit;
   }
@@ -442,13 +481,13 @@ export class ScrollEngineDOM implements ScrollEngine {
     const dom = domain ?? this.resolveDomain();
     const lim = limit ?? this.computeLimit(dom);
     let raw = next;
-    if (dom.kind === "circular" && lim && lim > 0)
+    if (dom.kind === "circular-unbounded" && lim && lim > 0)
       raw = this.alignToCycle(raw, lim, this.motionValue);
     const clamped = this.clampToDomain(raw, dom, lim);
     this.driver.write(clamped);
     this.signal.set(clamped, "program");
     this.motionValue =
-      dom.kind === "circular" && lim && lim > 0 ? raw : clamped;
+      dom.kind === "circular-unbounded" && lim && lim > 0 ? raw : clamped;
     return clamped;
   }
 
@@ -487,7 +526,7 @@ export class ScrollEngineDOM implements ScrollEngine {
       if (next === null) {
         const written = this.applyPosition(this.target, domain, limit);
         const canonicalTarget = this.clampToDomain(this.target, domain, limit);
-        if (domain.kind === "circular" && limit && limit > 0) {
+        if (this.isCircular(domain, limit)) {
           this.target = this.motionValue;
         }
         this.running = false;
@@ -529,54 +568,3 @@ export type SpotAninmation = {
   to: number;
   animation: Animation;
 };
-
-// export const defaultScrollEngine = (
-//   scheduler = createRafScheduler(),
-// ): ScrollEngineDOM => {
-//   const domScroller = new ScrollEngineDOM({
-//     driver: createDOMDriver(window, "block"),
-//     inputs: [
-//       wheelInput({ element: document.body }),
-//       touchInput({ element: document.body, multiplier: 2 }),
-//     ],
-//     scheduler,
-//     animator: expAnimator(0.1),
-//     plugins: [],
-//   });
-
-//   domScroller.init();
-//   return domScroller;
-// };
-
-// /** Virtual circular driver that keeps position in memory. */
-// export function createVirtualCircularDriver(period: number): ScrollDriver {
-//   const base = createDOMDriver(window, "block");
-//   return {
-//     ...base,
-//     domain: () => {
-//       const lim = Math.max(0, base.limit());
-//       return { kind: "circular", min: 0, max: lim, period: lim } as const;
-//     },
-//   };
-// }
-
-// /** Engine with circular domain; still gets history via sessionStorage. */
-// export function circularScrollEngine(
-//   period: number,
-//   scheduler: Scheduler = createRafScheduler(),
-// ): ScrollEngineDOM {
-//   const engine = new ScrollEngineDOM({
-//     driver: createVirtualCircularDriver(period),
-//     inputs: [
-//       wheelInput({ element: document.body }),
-//       touchInput({ element: document.body, multiplier: 2 }),
-//     ],
-//     scheduler,
-//     animator: expAnimator(0.15), // slightly snappier default for loops
-//     plugins: [],
-//   });
-
-//   engine.init();
-
-//   return engine;
-// }
