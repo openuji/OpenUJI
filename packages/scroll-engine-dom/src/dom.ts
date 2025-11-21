@@ -242,15 +242,12 @@ export class ScrollEngineDOM implements ScrollEngine {
 
   /** Seed BEFORE init() — no jump. */
   seedInitialPosition(pos: number) {
-    const domain = this.resolveDomain();
-    const limit = this.computeLimit(domain);
-    const clamped = this.clampToDomain(pos, domain, limit);
-
-    this.driver.write(clamped);
-    this.signal.set(clamped, "program");
-    this.motionValue = clamped;
-    this.target = clamped;
-    this.prev = clamped;
+    const canonical = this.domain.clamp(pos);
+    this.driver.write(canonical);
+    this.signal.set(canonical, "program");
+    this.motionValue = canonical;
+    this.target = canonical;
+    this.prev = canonical;
     this.velocity = 0;
     this.direction = 0;
   }
@@ -265,14 +262,10 @@ export class ScrollEngineDOM implements ScrollEngine {
     // 1) user scroll listener
     this.destroyers.push(
       this.driver.onUserScroll((p) => {
+        
         this.signal.set(p, "user");
-        const domain = this.resolveDomain();
-        const limit = this.computeLimit(domain);
-        if (this.isCircular(domain, limit)) {
-          this.motionValue = this.alignToCycle(p, limit, this.motionValue);
-        } else {
-          this.motionValue = p;
-        }
+        this.motionValue = this.domain.align(p, this.motionValue);
+
         this.target = this.motionValue;
         this.plugins.forEach((pl) => pl.onUserScroll?.(p));
       }),
@@ -288,15 +281,9 @@ export class ScrollEngineDOM implements ScrollEngine {
 
     // 4) velocity/direction from signal
     this.signal.on((p) => {
-      const domain = this.resolveDomain();
-      const limit = this.computeLimit(domain);
-      let delta = p - this.prev;
-      if (this.isCircular(domain, limit) && limit !== null) {
-        if (delta > limit / 2) delta -= limit;
-        else if (delta < -limit / 2) delta += limit;
-      }
+      const delta = this.domain.delta(p, this.prev);
       this.velocity = delta;
-      this.direction = Math.sign(this.velocity) as ScrollDirection;
+      this.direction = Math.sign(delta) as ScrollDirection;
       this.prev = p;
     });
   }
@@ -309,38 +296,33 @@ export class ScrollEngineDOM implements ScrollEngine {
   }
 
   scrollTo(value: number, immediate = false) {
-    const domain = this.resolveDomain();
-    const limit = this.computeLimit(domain);
-    const { target, canonical } = this.projectTarget(
+      const { target, canonical } = this.domain.projectTarget(
       value,
-      domain,
-      limit,
       this.motionValue,
     );
 
-    if (immediate) {
-      this.target = target;
-      const written = this.applyPosition(canonical, domain, limit);
-      if (this.isCircular(domain, limit)) {
-        this.target = this.motionValue; // keep logical target on same cycle
-      }
-      this.plugins.forEach((p) => p.onTargetChange?.(canonical));
-      this.plugins.forEach((p) =>
-        p.onSettle?.({
-          position: written,
-          target: canonical,
-          velocity: this.velocity,
-          direction: this.direction,
-          limit,
-        }),
-      );
-      return;
-    }
-
+  if (immediate) {
     this.target = target;
+    const written = this.applyPosition(canonical);
+
     this.plugins.forEach((p) => p.onTargetChange?.(canonical));
-    this.startLoop();
+    this.plugins.forEach((p) =>
+      p.onSettle?.({
+        position: written,
+        target: this.domain.canonicalOf(target),
+        velocity: this.velocity,
+        direction: this.direction,
+        limit: this.domain.limit,
+      }),
+    );
+    return;
   }
+
+  this.target = target;
+  this.plugins.forEach((p) => p.onTargetChange?.(canonical));
+  this.startLoop();
+}
+
 
   applyImpulse(d: number) {
     this.impulse += d;
@@ -473,22 +455,17 @@ export class ScrollEngineDOM implements ScrollEngine {
     return value + rev * limit;
   }
 
-  private applyPosition(
-    next: number,
-    domain?: DomainDescriptor,
-    limit?: number | null,
-  ) {
-    const dom = domain ?? this.resolveDomain();
-    const lim = limit ?? this.computeLimit(dom);
-    let raw = next;
-    if (dom.kind === "circular-unbounded" && lim && lim > 0)
-      raw = this.alignToCycle(raw, lim, this.motionValue);
-    const clamped = this.clampToDomain(raw, dom, lim);
-    this.driver.write(clamped);
-    this.signal.set(clamped, "program");
-    this.motionValue =
-      dom.kind === "circular-unbounded" && lim && lim > 0 ? raw : clamped;
-    return clamped;
+  private applyPosition(next: number) {
+    const { canonical, logical } = this.domain.mapPosition(
+      next,
+      this.motionValue,
+    );
+
+    this.driver.write(canonical);
+    this.signal.set(canonical, "program");
+    this.motionValue = logical;
+
+    return canonical;
   }
 
   private startLoop() {
@@ -505,30 +482,26 @@ export class ScrollEngineDOM implements ScrollEngine {
       const dt = now - last;
       last = now;
 
-      const domain = this.resolveDomain();
-      const limit = this.computeLimit(domain);
-
+      
       if (this.impulse !== 0) {
-        const { target, canonical } = this.applyImpulseToTarget(
+        const { target, canonical } = this.domain.applyImpulse(
           this.target,
           this.impulse,
-          domain,
-          limit,
+          this.motionValue,
+          this.direction,
         );
         this.target = target;
         this.impulse = 0;
         this.plugins.forEach((p) => p.onTargetChange?.(canonical));
       }
-
+      
       const cur = this.motionValue;
       const next = this.animator.step(cur, this.target, dt);
 
-      if (next === null) {
-        const written = this.applyPosition(this.target, domain, limit);
-        const canonicalTarget = this.clampToDomain(this.target, domain, limit);
-        if (this.isCircular(domain, limit)) {
-          this.target = this.motionValue;
-        }
+     if (next === null) {
+        const written = this.applyPosition(this.target);
+        const canonicalTarget = this.domain.canonicalOf(this.target);
+
         this.running = false;
         this.scheduler.stop();
 
@@ -537,13 +510,13 @@ export class ScrollEngineDOM implements ScrollEngine {
           target: canonicalTarget,
           velocity: this.velocity,
           direction: this.direction,
-          limit,
+          limit: this.domain.limit,
         };
         this.plugins.forEach((p) => p.onSettle?.(info));
         return;
       }
 
-      this.applyPosition(next, domain, limit);
+      this.applyPosition(next);
       this.scheduler.start(step);
     };
 
