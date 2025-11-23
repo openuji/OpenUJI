@@ -12,12 +12,11 @@ import { Menu, ChevronRight } from "lucide-react";
 import type { JSX } from "react/jsx-dev-runtime";
 import React, { useEffect } from "react";
 
-
 // Your incoming data shape
 export type FlatTocItem = {
-  id: string;      // e.g. "h2-abstract"
-  text: string;    // e.g. "Abstract"
-  depth: number;   // 1,2,3...
+  id: string; // e.g. "h2-abstract"
+  text: string; // e.g. "Abstract"
+  depth: number; // 1,2,3...
 };
 
 // Internal nested shape used by the TOC
@@ -30,7 +29,7 @@ type TocItem = {
 export function buildNestedToc(flatItems: FlatTocItem[]): TocItem[] {
   const root: TocItem[] = [];
   const stack: { depth: number; node: TocItem }[] = [];
-  if(!Array.isArray(flatItems)) return root;
+  if (!Array.isArray(flatItems)) return root;
 
   for (const item of flatItems) {
     const node: TocItem = { id: item.id, title: item.text };
@@ -55,7 +54,7 @@ export function buildNestedToc(flatItems: FlatTocItem[]): TocItem[] {
   return root;
 }
 type LinkRenderer = (
-  props: React.AnchorHTMLAttributes<HTMLAnchorElement>
+  props: React.AnchorHTMLAttributes<HTMLAnchorElement>,
 ) => JSX.Element;
 
 const DefaultLink: LinkRenderer = (props) => <a {...props} />;
@@ -78,7 +77,6 @@ interface TocNodeProps {
   level: number;
   LinkComponent: LinkRenderer;
 }
-
 
 /* ---------- helpers ---------- */
 
@@ -111,14 +109,14 @@ function useActiveHeading(ids: string[]) {
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.filter(
-          (e) => e.isIntersecting && ids.includes(e.target.id)
+          (e) => e.isIntersecting && ids.includes(e.target.id),
         );
 
         if (!visible.length) return;
 
         // Pick the element closest to the top
         visible.sort(
-          (a, b) => a.boundingClientRect.top - b.boundingClientRect.top
+          (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
         );
 
         const newActiveId = visible[0]?.target.id;
@@ -130,7 +128,7 @@ function useActiveHeading(ids: string[]) {
         // Adjust rootMargin to tweak when "active" switches
         rootMargin: "0% 0% -70% 0%",
         threshold: 0.1,
-      }
+      },
     );
 
     ids.forEach((id) => {
@@ -157,11 +155,9 @@ function TocNode({ item, activeId, level, LinkComponent }: TocNodeProps) {
     if (hasActiveDescendant) setOpen(true);
   }, [hasActiveDescendant]);
 
-  const indentClass =
-    level === 0 ? "" : level === 1 ? "ml-2" : "ml-4"; // simple manual indent
+  const indentClass = level === 0 ? "" : level === 1 ? "ml-2" : "ml-4"; // simple manual indent
 
-  const linkBase =
-    "flex-1 rounded-md px-2 py-1 text-left text-sm transition";
+  const linkBase = "flex-1 rounded-md px-2 py-1 text-left text-sm transition";
   const linkState = isActive
     ? "bg-muted font-medium text-foreground"
     : "text-muted-foreground hover:bg-muted";
@@ -214,13 +210,14 @@ const TocTree = ({
   level = 0,
   LinkComponent = DefaultLink,
 }: TocTreeProps) => {
-  const indentClass =
-    level === 0 ? " " : level === 1 ? "ml-2" : "ml-4"; // simple manual indent
+  const indentClass = level === 0 ? " " : level === 1 ? "ml-2" : "ml-4"; // simple manual indent
 
-return (
+  return (
     <ul
       className={
-        level === 0 ? "space-y-1" : `mt-1 space-y-1 border-l ${indentClass} pl-1 pt-1`
+        level === 0
+          ? "space-y-1"
+          : `mt-1 space-y-1 border-l ${indentClass} pl-1 pt-1`
       }
     >
       {items.map((item) => (
@@ -233,66 +230,69 @@ return (
         />
       ))}
     </ul>
-  );}
-
-
+  );
+};
 
 export const Toc = ({
-  items, title = "On this page"}: {
-  items: TocItem[]; title?: string;
+  items,
+  title = "On this page",
+}: {
+  items: TocItem[];
+  title?: string;
 }) => {
-    const allIds = React.useMemo(() => flattenTocIds(items), [items]);
-    const tocContainerRef = React.useRef<HTMLDivElement | null>(null);
-    const activeId = useActiveHeading(allIds);
-    const scrollDir = React.useRef<"up" | "down" | null>(null);
+  const allIds = React.useMemo(() => flattenTocIds(items), [items]);
+  const tocContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const activeId = useActiveHeading(allIds);
+  const scrollDir = React.useRef<"up" | "down" | null>(null);
 
-    useEffect(() => {
-      let lastScrollY = window.scrollY;
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
 
-      const onScroll = () => {
-        const currentScrollY = window.scrollY;
-        if (currentScrollY > lastScrollY) {
-          scrollDir.current = "down";
-        } else if (currentScrollY < lastScrollY) {
-          scrollDir.current = "up";
-        }
-        lastScrollY = currentScrollY;
-      };
-
-      window.addEventListener("scroll", onScroll, { passive: true });
-      return () => {
-        window.removeEventListener("scroll", onScroll);
-      };
-    }, []);
-
-    useEffect(() => { 
-      const padding = 24;
-      const container = tocContainerRef.current;
-      if (!container || !activeId) return;
-
-      const activeLink = container.querySelector<HTMLAnchorElement>(
-        `a[href="#${activeId}"]`
-      );
-      if (!activeLink) return;
-      
-      const linkTop = activeLink.offsetTop;
-      const linkBottom = linkTop + activeLink.offsetHeight;
-      const containerTop = container.scrollTop;
-      const containerBottom = containerTop + container.clientHeight;
-      if (linkTop > containerBottom && scrollDir.current === "down") {
-        container.scrollTo({ top: linkTop - padding, behavior: "smooth" });
-      } 
-      else if (linkBottom < containerTop && scrollDir.current === "up") {
-         container.scrollTo({ top: linkBottom - container.clientHeight + padding, behavior: "smooth" });
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY) {
+        scrollDir.current = "down";
+      } else if (currentScrollY < lastScrollY) {
+        scrollDir.current = "up";
       }
+      lastScrollY = currentScrollY;
+    };
 
-       //console.log('Scrolling TOC to active link:', { linkTop, linkBottom, containerTop, containerBottom });
-      
-      
-    }, [activeId]);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
-    return (
-    <><aside
+  useEffect(() => {
+    const padding = 24;
+    const container = tocContainerRef.current;
+    if (!container || !activeId) return;
+
+    const activeLink = container.querySelector<HTMLAnchorElement>(
+      `a[href="#${activeId}"]`,
+    );
+    if (!activeLink) return;
+
+    const linkTop = activeLink.offsetTop;
+    const linkBottom = linkTop + activeLink.offsetHeight;
+    const containerTop = container.scrollTop;
+    const containerBottom = containerTop + container.clientHeight;
+    if (linkTop > containerBottom && scrollDir.current === "down") {
+      container.scrollTo({ top: linkTop - padding, behavior: "smooth" });
+    } else if (linkBottom < containerTop && scrollDir.current === "up") {
+      container.scrollTo({
+        top: linkBottom - container.clientHeight + padding,
+        behavior: "smooth",
+      });
+    }
+
+    //console.log('Scrolling TOC to active link:', { linkTop, linkBottom, containerTop, containerBottom });
+  }, [activeId]);
+
+  return (
+    <>
+      <aside
         className="
           sticky top-0
           hidden
@@ -304,10 +304,13 @@ export const Toc = ({
         <div className="border-r bg-sidebar px-4">
           {/* <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {title}
-          </h2> */}            
-            <div ref={tocContainerRef} className="h-[calc(100svh)] overflow-y-auto py-6" >
-              <TocTree items={items} activeId={activeId} />
-            </div>            
+          </h2> */}
+          <div
+            ref={tocContainerRef}
+            className="h-[calc(100svh)] overflow-y-auto py-6"
+          >
+            <TocTree items={items} activeId={activeId} />
+          </div>
         </div>
       </aside>
       {/* Mobile: floating hamburger + sheet overlay */}
@@ -325,9 +328,7 @@ export const Toc = ({
           </SheetTrigger>
 
           <SheetContent side="right" className="w-[85vw] sm:w-96 px-4">
-            <SheetHeader>
-              {/* <SheetTitle>{title}</SheetTitle> */}
-            </SheetHeader> 
+            <SheetHeader>{/* <SheetTitle>{title}</SheetTitle> */}</SheetHeader>
 
             <ScrollArea className="mt-4 h-[calc(100svh-5rem)] pr-3">
               <TocTree
@@ -338,6 +339,7 @@ export const Toc = ({
             </ScrollArea>
           </SheetContent>
         </Sheet>
-        </div>
-      </>)
-}
+      </div>
+    </>
+  );
+};

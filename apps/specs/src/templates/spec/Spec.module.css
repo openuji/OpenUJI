@@ -1,17 +1,17 @@
 @reference '#main.css';
 
 .specTemplate {
-
-  article, section {
+  article,
+  section {
     margin-block: --spacing(6);
   }
- 
+
   @variant lg {
     display: flex;
-    gap: --spacing(4);  
+    gap: --spacing(4);
     > main {
       flex: 1;
-      
+
       /* aside {
         position: sticky;
         top: 0;
@@ -20,10 +20,7 @@
 
       } */
     }
-
-    
   }
-  
 
   .toolbar {
     position: sticky;
@@ -33,12 +30,8 @@
     width: var(--tools-width);
     @apply px-4;
   }
-  
-
- 
 
   .contentSections {
-
     h2 {
       padding-top: --spacing(12);
       padding-bottom: --spacing(2);
@@ -53,22 +46,17 @@
     h4 {
       margin-bottom: --spacing(3);
     }
-  
   }
- 
+
   .headerSections {
-
-
-   
     h2 {
       @apply text-sm font-medium text-muted-foreground;
       margin-bottom: --spacing(2);
     }
 
-    p, ul {
+    p,
+    ul {
       @apply text-sm text-foreground;
     }
-
   }
-
 }

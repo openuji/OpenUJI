@@ -1,63 +1,72 @@
-
 <section id="sotd">
   <p>
-    This is an Editor's Draft. It may be updated, replaced, or obsoleted at any time.
+    This is an Editor's Draft. It may be updated, replaced, or obsoleted at any
+    time.
   </p>
 </section>
 
 <section id="abstract">
   <h2 id="h2-abstract">Abstract</h2>
   <p>
-    This specification defines <dfn>UJM</dfn> (User Journey Mapping), a vocabulary, data model, and JSON-LD/JSON
-    serialization for describing user journeys as graphs of <a>Step</a>s connected by <a>Transition</a>s, optionally
-    grouped into <a>Phase</a>s and <a>Session</a>s.
-    It clearly separates <em>design-time journey definitions</em> from <em>runtime executions and analytics</em>, so
-    structural models are not conflated with observed data.
+    This specification defines <dfn>UJM</dfn> (User Journey Mapping), a
+    vocabulary, data model, and JSON-LD/JSON serialization for describing user
+    journeys as graphs of <a>Step</a>s connected by <a>Transition</a>s,
+    optionally grouped into <a>Phase</a>s and <a>Session</a>s. It clearly
+    separates <em>design-time journey definitions</em> from
+    <em>runtime executions and analytics</em>, so structural models are not
+    conflated with observed data.
   </p>
-  <p>
-    The specification provides:
-  </p>
+  <p>The specification provides:</p>
   <ul>
     <li>A normative design-time model for <a>Journey</a>-level structures.</li>
-    <li>A normative execution and analytics model (<a>JourneyRun</a>, <a>StepEvent</a>, <a>StepStatistics</a>).</li>
+    <li>
+      A normative execution and analytics model (<a>JourneyRun</a>,
+      <a>StepEvent</a>, <a>StepStatistics</a>).
+    </li>
     <li>A JSON-LD context for semantic interoperability.</li>
     <li>An illustrative JSON Schema aligned with the design/runtime split.</li>
   </ul>
 </section>
 
-
 <section id="conformance">
   <h2 id="h2-conformance">Conformance</h2>
   <p>
-    The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>,
-    <em class="rfc2119">SHOULD NOT</em>, and <em class="rfc2119">MAY</em> are to be interpreted as described in
-    <a data-cite="RFC2119">RFC2119</a>.
+    The key words <em class="rfc2119">MUST</em>,
+    <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>,
+    <em class="rfc2119">SHOULD NOT</em>, and <em class="rfc2119">MAY</em> are to
+    be interpreted as described in <a data-cite="RFC2119">RFC2119</a>.
   </p>
   <p>
-    Sections marked as “normative” are prescriptive. Other sections are informative.
+    Sections marked as “normative” are prescriptive. Other sections are
+    informative.
   </p>
   <p>
-    This specification uses IRIs for identifiers and assumes JSON-LD as the canonical serialization.
-    When examples or schemas use compact terms such as <code>"Journey"</code> or <code>"StepEvent"</code>,
-    they are intended to be interpreted via the JSON-LD context in <a href="#json-ld">JSON-LD</a>, where
-    they expand to IRIs in the <code>https://www.openuji.org/ns/ujm#</code> namespace (for example,
+    This specification uses IRIs for identifiers and assumes JSON-LD as the
+    canonical serialization. When examples or schemas use compact terms such as
+    <code>"Journey"</code> or <code>"StepEvent"</code>, they are intended to be
+    interpreted via the JSON-LD context in <a href="#json-ld">JSON-LD</a>, where
+    they expand to IRIs in the
+    <code>https://www.openuji.org/ns/ujm#</code> namespace (for example,
     <code>"Journey"</code> &rarr; <code>ujm:Journey</code>).
-    </p>
-   <p>
-  Requirements stated using <code>ujm:ClassName</code> apply to JSON representations whose
-  <code>type</code> is the compact term <code>"ClassName"</code> under that context.
-  In this specification, <code>type</code> MUST be a single string value, not an array.
-  For subclass relationships defined in the UJM vocabulary (for example,
-  <code>ujm:CallStep</code> as a subclass of <code>ujm:Step</code>), requirements on the
-  superclass also apply to JSON representations whose <code>type</code> is the subclass
-  term only.
-  Some structural helper objects (such as inline <code>StepRef</code> values) MAY omit
-  a <code>type</code> and are governed by the constraints of their containing resources.
-</p>
+  </p>
+  <p>
+    Requirements stated using <code>ujm:ClassName</code> apply to JSON
+    representations whose <code>type</code> is the compact term
+    <code>"ClassName"</code> under that context. In this specification,
+    <code>type</code> MUST be a single string value, not an array. For subclass
+    relationships defined in the UJM vocabulary (for example,
+    <code>ujm:CallStep</code> as a subclass of <code>ujm:Step</code>),
+    requirements on the superclass also apply to JSON representations whose
+    <code>type</code> is the subclass term only. Some structural helper objects
+    (such as inline <code>StepRef</code> values) MAY omit a
+    <code>type</code> and are governed by the constraints of their containing
+    resources.
+  </p>
 
   <p>
-    UUID-based identifiers used as <code>id</code> values SHOULD be expressed as IRIs (for example,
-    using the <code>urn:uuid:</code> scheme) so they are valid JSON-LD <code>@id</code> values.
+    UUID-based identifiers used as <code>id</code> values SHOULD be expressed as
+    IRIs (for example, using the <code>urn:uuid:</code> scheme) so they are
+    valid JSON-LD <code>@id</code> values.
   </p>
 </section>
 
@@ -69,13 +78,24 @@
     <strong>design-time structures</strong>:
   </p>
   <ul>
-    <li>They describe intended journeys, groupings, channels, and touchpoints.</li>
-    <li>They <strong>MUST NOT</strong> contain per-execution telemetry such as event timestamps,
-    user or session identifiers, raw event logs, or measured metrics.</li>
-    <li>They <strong>MUST NOT</strong> contain instances of <code>ujm:Emotion</code> or <code>ujm:Metric</code>.
-        Emotions and metrics are reserved for runtime and analytics resources.</li>
-    <li>Runtime information <strong>MUST</strong> be represented using the Execution and Analytics Model
-        defined in <a href="#execution-model">Execution and Analytics Model</a>.</li>
+    <li>
+      They describe intended journeys, groupings, channels, and touchpoints.
+    </li>
+    <li>
+      They <strong>MUST NOT</strong> contain per-execution telemetry such as
+      event timestamps, user or session identifiers, raw event logs, or measured
+      metrics.
+    </li>
+    <li>
+      They <strong>MUST NOT</strong> contain instances of
+      <code>ujm:Emotion</code> or <code>ujm:Metric</code>. Emotions and metrics
+      are reserved for runtime and analytics resources.
+    </li>
+    <li>
+      Runtime information <strong>MUST</strong> be represented using the
+      Execution and Analytics Model defined in
+      <a href="#execution-model">Execution and Analytics Model</a>.
+    </li>
   </ul>
 
   <section id="journey">
@@ -84,92 +104,123 @@
     <section data-dfn-for="Journey">
       <h4 id="h4-ujm-journey"><dfn>ujm:Journey</dfn></h4>
       <p>
-        A <code>Journey</code> is a design-time definition of a user journey: a graph of <a>Step</a>s and
-        <a>Transition</a>s, optionally grouped by <a>Phase</a>s and <a>Session</a>s. Concrete executions are represented
-        by <a>JourneyRun</a> and <a>StepEvent</a> and <strong>MUST NOT</strong> be encoded directly in a
-        <code>Journey</code>.
+        A <code>Journey</code> is a design-time definition of a user journey: a
+        graph of <a>Step</a>s and <a>Transition</a>s, optionally grouped by
+        <a>Phase</a>s and <a>Session</a>s. Concrete executions are represented
+        by <a>JourneyRun</a> and <a>StepEvent</a> and
+        <strong>MUST NOT</strong> be encoded directly in a <code>Journey</code>.
       </p>
 
       <table class="simple w-full">
         <thead>
-          <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+          <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Notes</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td><code>id</code></td><td>1</td><td>IRI of the journey definition.</td></tr>
+          <tr>
+            <td><code>id</code></td>
+            <td>1</td>
+            <td>IRI of the journey definition.</td>
+          </tr>
           <tr>
             <td><code>type</code></td>
             <td>1</td>
             <td>MUST be <code>ujm:Journey</code>.</td>
           </tr>
-          <tr><td><code>title</code></td><td>1</td><td>Human-readable title.</td></tr>
+          <tr>
+            <td><code>title</code></td>
+            <td>1</td>
+            <td>Human-readable title.</td>
+          </tr>
           <tr>
             <td><code>version</code></td>
             <td>0..1</td>
             <td>
-              Version identifier of this Journey definition (e.g., <code>"1.0.0"</code>).
-              Producers using <code>version</code> SHOULD update it when structural changes (steps, transitions,
-              phases, sessions, CallSteps) materially affect interpretation or comparison.
-              No specific versioning scheme is mandated.
+              Version identifier of this Journey definition (e.g.,
+              <code>"1.0.0"</code>). Producers using <code>version</code> SHOULD
+              update it when structural changes (steps, transitions, phases,
+              sessions, CallSteps) materially affect interpretation or
+              comparison. No specific versioning scheme is mandated.
             </td>
           </tr>
-          <tr><td><code>goal</code></td><td>0..1</td><td>Free-text description of the journey’s purpose.</td></tr>
+          <tr>
+            <td><code>goal</code></td>
+            <td>0..1</td>
+            <td>Free-text description of the journey’s purpose.</td>
+          </tr>
           <tr>
             <td><code>created</code>, <code>modified</code></td>
             <td>0..1 each</td>
-            <td>ISO 8601 date-time for definition lifecycle, not executions.</td>
+            <td>
+              ISO 8601 date-time for definition lifecycle, not executions.
+            </td>
           </tr>
           <tr>
             <td><code>personas</code></td>
             <td>0..*</td>
             <td>Array of <a>Persona</a> IRIs relevant to this journey.</td>
           </tr>
-          <tr><td><code>tags</code></td><td>0..*</td><td>Array of classification strings.</td></tr>
+          <tr>
+            <td><code>tags</code></td>
+            <td>0..*</td>
+            <td>Array of classification strings.</td>
+          </tr>
           <tr>
             <td><code>steps</code></td>
             <td>1..*</td>
             <td>
-              Array of <a>Step</a> and/or <a>CallStep</a> definitions that belong to this Journey.
-              Step identifiers MUST be unique within the Journey.
+              Array of <a>Step</a> and/or <a>CallStep</a> definitions that
+              belong to this Journey. Step identifiers MUST be unique within the
+              Journey.
             </td>
           </tr>
           <tr>
             <td><code>transitions</code></td>
             <td>0..*</td>
             <td>
-              Array of <a>Transition</a>s connecting steps <strong>within this Journey only</strong>.
+              Array of <a>Transition</a>s connecting steps
+              <strong>within this Journey only</strong>.
             </td>
           </tr>
           <tr>
             <td><code>phases</code>, <code>sessions</code></td>
             <td>0..*</td>
             <td>
-              Arrays of <a>Phase</a> and <a>Session</a> groupings whose members are <a>StepRef</a>s
-              referencing steps in this Journey.
+              Arrays of <a>Phase</a> and <a>Session</a> groupings whose members
+              are <a>StepRef</a>s referencing steps in this Journey.
             </td>
           </tr>
           <tr>
             <td><code>start</code>, <code>end</code></td>
             <td>0..1 each</td>
             <td>
-              IRIs of designated initial and terminal <a>Step</a>s within this Journey.
-              A Journey intended to be a callee of a <a>CallStep</a> MUST define <code>start</code>.
+              IRIs of designated initial and terminal <a>Step</a>s within this
+              Journey. A Journey intended to be a callee of a
+              <a>CallStep</a> MUST define <code>start</code>.
             </td>
           </tr>
         </tbody>
       </table>
-   
     </section>
 
     <section data-dfn-for="Step">
       <h4 id="h4-ujm-step"><dfn>ujm:Step</dfn></h4>
       <p>
-        A <code>Step</code> is a design-time node in a <a>Journey</a>, describing intent, semantics, and placement in
-        the journey graph. It does not embed runtime telemetry; observed occurrences are modeled via
+        A <code>Step</code> is a design-time node in a <a>Journey</a>,
+        describing intent, semantics, and placement in the journey graph. It
+        does not embed runtime telemetry; observed occurrences are modeled via
         <a>StepEvent</a>.
       </p>
       <table class="simple">
         <thead>
-          <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+          <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Notes</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
@@ -181,18 +232,22 @@
             <td><code>type</code></td>
             <td>1</td>
             <td>
-                MUST be <code>ujm:Step</code> for resources that are instances of <code>ujm:Step</code>
-                and not of a more specific subclass.
-                Subclasses such as <code>ujm:CallStep</code> MUST use their own class term in
-                <code>type</code> instead of <code>"Step"</code>.
-              </td>          
-            </tr>
+              MUST be <code>ujm:Step</code> for resources that are instances of
+              <code>ujm:Step</code> and not of a more specific subclass.
+              Subclasses such as <code>ujm:CallStep</code> MUST use their own
+              class term in <code>type</code> instead of <code>"Step"</code>.
+            </td>
+          </tr>
           <tr>
             <td><code>name</code></td>
             <td>1</td>
             <td>Human-readable label.</td>
           </tr>
-          <tr><td><code>description</code></td><td>0..1</td><td>Free-text description.</td></tr>
+          <tr>
+            <td><code>description</code></td>
+            <td>0..1</td>
+            <td>Free-text description.</td>
+          </tr>
           <tr>
             <td><code>touchpoint</code></td>
             <td>0..1</td>
@@ -202,14 +257,16 @@
             <td><code>channel</code></td>
             <td>0..1</td>
             <td>
-              Controlled design-time term via <code>@vocab</code>
-              (e.g., <code>ujm:Web</code>, <code>ujm:MobileApp</code>).
+              Controlled design-time term via <code>@vocab</code> (e.g.,
+              <code>ujm:Web</code>, <code>ujm:MobileApp</code>).
             </td>
           </tr>
           <tr>
             <td><code>persona</code></td>
             <td>0..1</td>
-            <td>IRI of a primary <a>Persona</a> for which this step is modeled.</td>
+            <td>
+              IRI of a primary <a>Persona</a> for which this step is modeled.
+            </td>
           </tr>
           <tr>
             <td><code>preconditions</code>, <code>postconditions</code></td>
@@ -223,110 +280,132 @@
     <section data-dfn-for="CallStep">
       <h4 id="h4-ujm-callstep"><dfn>ujm:CallStep</dfn></h4>
       <p>
-        A <code>CallStep</code> is a specialized <a>Step</a> that composes another design-time <a>Journey</a>.
-        It provides structural composition at design time only.
-        A <code>CallStep</code> inherits all <a>Step</a> properties and can be included in <a>Phase</a>/<a>Session</a>
+        A <code>CallStep</code> is a specialized <a>Step</a> that composes
+        another design-time <a>Journey</a>. It provides structural composition
+        at design time only. A <code>CallStep</code> inherits all
+        <a>Step</a> properties and can be included in <a>Phase</a>/<a
+          >Session</a
+        >
         groupings via <a>StepRef</a>.
       </p>
       <table class="simple">
         <thead>
-          <tr><th>Property</th><th>Cardinality</th><th>Constraints</th></tr>
+          <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Constraints</th>
+          </tr>
         </thead>
         <tbody>
-            <tr>
-              <td><code>type</code></td>
-              <td>1</td>
-              <td>
-                MUST be <code>ujm:CallStep</code>. CallStep instances MUST NOT also declare
-                <code>ujm:Step</code> in <code>type</code>; Step-level constraints apply
-                via the subclass relationship described in this specification.
-              </td>
-            </tr>
-            <tr>
+          <tr>
+            <td><code>type</code></td>
+            <td>1</td>
+            <td>
+              MUST be <code>ujm:CallStep</code>. CallStep instances MUST NOT
+              also declare <code>ujm:Step</code> in <code>type</code>;
+              Step-level constraints apply via the subclass relationship
+              described in this specification.
+            </td>
+          </tr>
+          <tr>
             <td><code>calls</code></td>
             <td>1</td>
             <td>
-              IRI of the callee <a>Journey</a>.
-              MUST reference an existing Journey definition.
+              IRI of the callee <a>Journey</a>. MUST reference an existing
+              Journey definition.
             </td>
           </tr>
           <tr>
             <td><code>entry</code></td>
             <td>0..1</td>
             <td>
-              IRI of a <a>Step</a> in the callee Journey.
-              If provided, it overrides the callee Journey’s <code>start</code>.
-              If absent, consumers MUST use the callee Journey’s <code>start</code>.
+              IRI of a <a>Step</a> in the callee Journey. If provided, it
+              overrides the callee Journey’s <code>start</code>. If absent,
+              consumers MUST use the callee Journey’s <code>start</code>.
             </td>
           </tr>
           <tr>
             <td><code>exitMap</code></td>
             <td>0..*</td>
-             <td>
-    Array of mappings from callee terminal <a>Step</a>s to labels in the caller Journey, e.g.
-<code>{"calleeEnd":"https://example.org/journey/checkout#success","label":"success"}</code>.
-The <code>calleeEnd</code> value MUST be the IRI of a <a>Step</a> in the callee
-<a>Journey</a> identified by <code>calls</code>. It identifies the terminal Step in the
-callee for which the mapping applies.
-For deterministic composition:
-<ul>
-  <li>
-    Transitions leaving the <code>CallStep</code> in the caller Journey that use
-    <code>label</code> SHOULD use values listed in <code>exitMap.label</code>.
-  </li>
-  <li>
-    If <code>exitMap</code> is omitted, a single unlabeled return path is assumed, and
-    callers SHOULD use unlabeled transitions or a single default label.
-  </li>
-</ul>
-
-  </td>
+            <td>
+              Array of mappings from callee terminal <a>Step</a>s to labels in
+              the caller Journey, e.g.
+              <code
+                >{"calleeEnd":"https://example.org/journey/checkout#success","label":"success"}</code
+              >. The <code>calleeEnd</code> value MUST be the IRI of a
+              <a>Step</a> in the callee <a>Journey</a> identified by
+              <code>calls</code>. It identifies the terminal Step in the callee
+              for which the mapping applies. For deterministic composition:
+              <ul>
+                <li>
+                  Transitions leaving the <code>CallStep</code> in the caller
+                  Journey that use <code>label</code> SHOULD use values listed
+                  in <code>exitMap.label</code>.
+                </li>
+                <li>
+                  If <code>exitMap</code> is omitted, a single unlabeled return
+                  path is assumed, and callers SHOULD use unlabeled transitions
+                  or a single default label.
+                </li>
+              </ul>
+            </td>
           </tr>
           <tr>
             <td><code>parameters</code></td>
             <td>0..1</td>
             <td>
-              Design-time description of inputs made available to the callee Journey
-              (e.g., keys, defaults, or binding expressions).
-              This is a structural contract and MUST NOT contain per-execution telemetry.
+              Design-time description of inputs made available to the callee
+              Journey (e.g., keys, defaults, or binding expressions). This is a
+              structural contract and MUST NOT contain per-execution telemetry.
             </td>
           </tr>
           <tr>
             <td><code>returns</code></td>
             <td>0..1</td>
             <td>
-              Design-time description of expected outputs or result shape from the callee Journey
-              (e.g., <code>{"status":["success","failure"]}</code>).
-              It documents semantics only and MUST NOT contain concrete runtime results.
+              Design-time description of expected outputs or result shape from
+              the callee Journey (e.g.,
+              <code>{"status":["success","failure"]}</code>). It documents
+              semantics only and MUST NOT contain concrete runtime results.
               Consumers SHOULD ignore unknown fields.
             </td>
           </tr>
         </tbody>
       </table>
       <p class="note">
-        At runtime, executions of a CallStep are represented as <a>StepEvent</a>s within a <a>JourneyRun</a>.
-        The <code>calleeRun</code> property on <a>StepEvent</a> links to nested JourneyRuns;
-        all concrete values belong to the execution model.
+        At runtime, executions of a CallStep are represented as
+        <a>StepEvent</a>s within a <a>JourneyRun</a>. The
+        <code>calleeRun</code> property on <a>StepEvent</a> links to nested
+        JourneyRuns; all concrete values belong to the execution model.
       </p>
     </section>
 
     <section data-dfn-for="Transition">
       <h4 id="h4-ujm-transition"><dfn>ujm:Transition</dfn></h4>
       <p>
-        A <code>Transition</code> connects two <a>Step</a>s within the same <a>Journey</a>.
-        It is a design-time construct and MUST NOT contain runtime telemetry.
-        The <code>from</code> and <code>to</code> steps MUST be distinct; self-transitions where <code>from</code> and <code>to</code> identify the same Step are NOT allowed.
+        A <code>Transition</code> connects two <a>Step</a>s within the same
+        <a>Journey</a>. It is a design-time construct and MUST NOT contain
+        runtime telemetry. The <code>from</code> and <code>to</code> steps MUST
+        be distinct; self-transitions where <code>from</code> and
+        <code>to</code> identify the same Step are NOT allowed.
       </p>
-      
+
       <table class="simple">
         <thead>
-          <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+          <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Notes</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>id</code></td>
             <td>0..1</td>
-            <td>IRI of the transition (recommended if transitions need stable references).</td>
+            <td>
+              IRI of the transition (recommended if transitions need stable
+              references).
+            </td>
           </tr>
           <tr>
             <td><code>type</code></td>
@@ -337,24 +416,27 @@ For deterministic composition:
             <td><code>from</code>, <code>to</code></td>
             <td>1 each</td>
             <td>
-              IRIs of <a>Step</a>s defined in the same containing <a>Journey</a>.
-              The <code>from</code> and <code>to</code> values MUST refer to two distinct Steps
-              (i.e., <code>from</code> and <code>to</code> MUST NOT be equal).
+              IRIs of <a>Step</a>s defined in the same containing
+              <a>Journey</a>. The <code>from</code> and <code>to</code> values
+              MUST refer to two distinct Steps (i.e., <code>from</code> and
+              <code>to</code> MUST NOT be equal).
             </td>
           </tr>
           <tr>
             <td><code>label</code></td>
             <td>0..1</td>
             <td>
-              Design-time outcome label (e.g., <code>"success"</code>, <code>"retry"</code>).
-              When used with <a>CallStep</a>, SHOULD align with <code>CallStep.exitMap.label</code>.
+              Design-time outcome label (e.g., <code>"success"</code>,
+              <code>"retry"</code>). When used with <a>CallStep</a>, SHOULD
+              align with <code>CallStep.exitMap.label</code>.
             </td>
           </tr>
           <tr>
             <td><code>pattern</code></td>
             <td>0..1</td>
             <td>
-              IRI of a <a>TransitionPattern</a> describing intended behavior or UX of this transition.
+              IRI of a <a>TransitionPattern</a> describing intended behavior or
+              UX of this transition.
             </td>
           </tr>
         </tbody>
@@ -364,22 +446,35 @@ For deterministic composition:
     <section data-dfn-for="TransitionPattern">
       <h4 id="h4-ujm-transitionpattern"><dfn>ujm:TransitionPattern</dfn></h4>
       <p>
-        A <code>TransitionPattern</code> is a reusable design-time description of how a
-        <a>Transition</a> should be experienced or implemented (e.g., visual behavior, handoff style,
-        interaction pattern). It does not contain event-level telemetry.
+        A <code>TransitionPattern</code> is a reusable design-time description
+        of how a <a>Transition</a> should be experienced or implemented (e.g.,
+        visual behavior, handoff style, interaction pattern). It does not
+        contain event-level telemetry.
       </p>
       <table class="simple">
         <thead>
-          <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+          <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Notes</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td><code>id</code></td><td>1</td><td>IRI of the pattern.</td></tr>
+          <tr>
+            <td><code>id</code></td>
+            <td>1</td>
+            <td>IRI of the pattern.</td>
+          </tr>
           <tr>
             <td><code>type</code></td>
             <td>1</td>
             <td>MUST be <code>ujm:TransitionPattern</code>.</td>
           </tr>
-          <tr><td><code>name</code></td><td>1</td><td>Human-readable name.</td></tr>
+          <tr>
+            <td><code>name</code></td>
+            <td>1</td>
+            <td>Human-readable name.</td>
+          </tr>
           <tr>
             <td><code>description</code></td>
             <td>0..1</td>
@@ -395,11 +490,14 @@ For deterministic composition:
     </section>
 
     <section id="phases-sessions-stepref">
-      <h4 id="h4-ujm-phase-ujm-session-and-ujm-stepref"><dfn>ujm:Phase</dfn>, <dfn>ujm:Session</dfn>, and <dfn>ujm:StepRef</dfn></h4>
+      <h4 id="h4-ujm-phase-ujm-session-and-ujm-stepref">
+        <dfn>ujm:Phase</dfn>, <dfn>ujm:Session</dfn>, and <dfn>ujm:StepRef</dfn>
+      </h4>
       <p>
-        <code>Phase</code> and <code>Session</code> are design-time groupings of <a>Step</a>s using
-        members of type <a>StepRef</a>. They define structural relationships only and MUST NOT embed runtime data.
-        A given <a>Step</a> MAY belong to multiple Phases and/or Sessions.
+        <code>Phase</code> and <code>Session</code> are design-time groupings of
+        <a>Step</a>s using members of type <a>StepRef</a>. They define
+        structural relationships only and MUST NOT embed runtime data. A given
+        <a>Step</a> MAY belong to multiple Phases and/or Sessions.
       </p>
 
       <section data-dfn-for="Phase">
@@ -410,16 +508,28 @@ For deterministic composition:
         </p>
         <table class="simple">
           <thead>
-            <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+            <tr>
+              <th>Property</th>
+              <th>Cardinality</th>
+              <th>Notes</th>
+            </tr>
           </thead>
           <tbody>
-            <tr><td><code>id</code></td><td>1</td><td>IRI of the phase.</td></tr>
+            <tr>
+              <td><code>id</code></td>
+              <td>1</td>
+              <td>IRI of the phase.</td>
+            </tr>
             <tr>
               <td><code>type</code></td>
               <td>1</td>
               <td>MUST be <code>ujm:Phase</code>.</td>
             </tr>
-            <tr><td><code>name</code></td><td>1</td><td>Human-readable label.</td></tr>
+            <tr>
+              <td><code>name</code></td>
+              <td>1</td>
+              <td>Human-readable label.</td>
+            </tr>
             <tr>
               <td><code>members</code></td>
               <td>1..*</td>
@@ -434,22 +544,36 @@ For deterministic composition:
       <section data-dfn-for="Session">
         <h5 id="h5-ujm-session">ujm:Session</h5>
         <p>
-          A <code>Session</code> is a design-time grouping of steps that are expected to occur within a coherent
-          interaction episode or lifecycle slice (e.g., a login session, onboarding call, support interaction).
-          Sessions are structural expectations, not raw technical sessions or logs.
+          A <code>Session</code> is a design-time grouping of steps that are
+          expected to occur within a coherent interaction episode or lifecycle
+          slice (e.g., a login session, onboarding call, support interaction).
+          Sessions are structural expectations, not raw technical sessions or
+          logs.
         </p>
         <table class="simple">
           <thead>
-            <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+            <tr>
+              <th>Property</th>
+              <th>Cardinality</th>
+              <th>Notes</th>
+            </tr>
           </thead>
           <tbody>
-            <tr><td><code>id</code></td><td>1</td><td>IRI of the session grouping.</td></tr>
+            <tr>
+              <td><code>id</code></td>
+              <td>1</td>
+              <td>IRI of the session grouping.</td>
+            </tr>
             <tr>
               <td><code>type</code></td>
               <td>1</td>
               <td>MUST be <code>ujm:Session</code>.</td>
             </tr>
-            <tr><td><code>name</code></td><td>0..1</td><td>Human-readable label.</td></tr>
+            <tr>
+              <td><code>name</code></td>
+              <td>0..1</td>
+              <td>Human-readable label.</td>
+            </tr>
             <tr>
               <td><code>members</code></td>
               <td>1..*</td>
@@ -464,74 +588,102 @@ For deterministic composition:
       <section data-dfn-for="StepRef">
         <h5 id="h5-ujm-stepref">ujm:StepRef</h5>
         <p>
-          A <code>StepRef</code> references a <a>Step</a> within a grouping and may specify an ordering.
+          A <code>StepRef</code> references a <a>Step</a> within a grouping and
+          may specify an ordering.
         </p>
         <table class="simple">
           <thead>
-            <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+            <tr>
+              <th>Property</th>
+              <th>Cardinality</th>
+              <th>Notes</th>
+            </tr>
           </thead>
           <tbody>
             <tr>
               <td><code>step</code></td>
               <td>1</td>
               <td>
-                IRI of the referenced <a>Step</a>, which MUST belong to the same Journey as the containing Phase/Session.
+                IRI of the referenced <a>Step</a>, which MUST belong to the same
+                Journey as the containing Phase/Session.
               </td>
             </tr>
             <tr>
               <td><code>order</code></td>
               <td>0..1</td>
               <td>
-                Sequence index (number or string) within the grouping; ordering is advisory.
+                Sequence index (number or string) within the grouping; ordering
+                is advisory.
               </td>
             </tr>
           </tbody>
         </table>
         <p>
-          <code>StepRef</code> is typically used as an inline structural object within <a>Phase</a> and
-          <a>Session</a> resources and does not itself carry an <code>id</code> or <code>type</code>.
-          Its semantics are determined by the <code>step</code> it references and the containing
+          <code>StepRef</code> is typically used as an inline structural object
+          within <a>Phase</a> and <a>Session</a> resources and does not itself
+          carry an <code>id</code> or <code>type</code>. Its semantics are
+          determined by the <code>step</code> it references and the containing
           grouping resource.
         </p>
       </section>
 
-      <p class="note">
-        Summary:
-      </p>
+      <p class="note">Summary:</p>
       <ul>
-        <li><strong>Phase</strong> – groups steps by conceptual journey progress.</li>
-        <li><strong>Session</strong> – groups steps by expected lifecycle or interaction episode.</li>
-        <li>Both are design-time only; runtime membership is derived from <a>StepEvent</a>s.</li>
+        <li>
+          <strong>Phase</strong> – groups steps by conceptual journey progress.
+        </li>
+        <li>
+          <strong>Session</strong> – groups steps by expected lifecycle or
+          interaction episode.
+        </li>
+        <li>
+          Both are design-time only; runtime membership is derived from
+          <a>StepEvent</a>s.
+        </li>
       </ul>
     </section>
 
     <section data-dfn-for="Channel">
       <h4 id="h4-ujm-channel"><dfn>ujm:Channel</dfn></h4>
       <p>
-        <code>Channel</code> is a controlled design-time term identifying interaction channels
-        (e.g., <code>ujm:Web</code>, <code>ujm:MobileApp</code>, <code>ujm:Phone</code>,
-        <code>ujm:InPerson</code>, <code>ujm:Email</code>, <code>ujm:SMS</code>).
-        Vocabularies MAY be extended.
+        <code>Channel</code> is a controlled design-time term identifying
+        interaction channels (e.g., <code>ujm:Web</code>,
+        <code>ujm:MobileApp</code>, <code>ujm:Phone</code>,
+        <code>ujm:InPerson</code>, <code>ujm:Email</code>,
+        <code>ujm:SMS</code>). Vocabularies MAY be extended.
       </p>
     </section>
 
     <section data-dfn-for="Touchpoint">
       <h4 id="h4-ujm-touchpoint"><dfn>ujm:Touchpoint</dfn></h4>
       <p>
-        A <code>Touchpoint</code> is a design-time description of a user interaction surface or location.
+        A <code>Touchpoint</code> is a design-time description of a user
+        interaction surface or location.
       </p>
       <table class="simple">
         <thead>
-          <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+          <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Notes</th>
+          </tr>
         </thead>
         <tbody>
-          <tr><td><code>id</code></td><td>1</td><td>MUST be an IRI.</td></tr>
+          <tr>
+            <td><code>id</code></td>
+            <td>1</td>
+            <td>MUST be an IRI.</td>
+          </tr>
           <tr>
             <td><code>type</code></td>
             <td>1</td>
             <td>MUST be <code>ujm:Touchpoint</code>.</td>
           </tr>
-          <tr><td><code>name</code></td><td>1</td><td>Human-readable name.</td></tr>
+          <tr>
+            <td><code>name</code></td>
+            <td>1</td>
+            <td>Human-readable name.</td>
+          </tr>
           <tr>
             <td><code>uri</code></td>
             <td>0..1</td>
@@ -540,7 +692,9 @@ For deterministic composition:
           <tr>
             <td><code>location</code></td>
             <td>0..1</td>
-            <td>Free-text or external reference to a physical/virtual location.</td>
+            <td>
+              Free-text or external reference to a physical/virtual location.
+            </td>
           </tr>
           <tr>
             <td><code>owner</code></td>
@@ -554,87 +708,104 @@ For deterministic composition:
     <section id="persona">
       <h4 id="h4-ujm-persona"><dfn>ujm:Persona</dfn></h4>
       <p>
-        <code>Persona</code> is an imported design-time archetype. Journeys and Steps MAY reference Personas
-        to describe intended audiences or segments.
+        <code>Persona</code> is an imported design-time archetype. Journeys and
+        Steps MAY reference Personas to describe intended audiences or segments.
       </p>
       <p>
-        <code>Persona</code> resources themselves MUST NOT embed runtime telemetry, <code>ujm:Emotion</code>, or
+        <code>Persona</code> resources themselves MUST NOT embed runtime
+        telemetry, <code>ujm:Emotion</code>, or
         <code>ujm:Metric</code> instances.
       </p>
     </section>
-
   </section>
 </section>
 
 <section id="execution-model" class="normative">
-  <h2 id="h2-execution-and-analytics-model-runtime">Execution and Analytics Model (Runtime)</h2>
+  <h2 id="h2-execution-and-analytics-model-runtime">
+    Execution and Analytics Model (Runtime)
+  </h2>
   <p>
-    This section defines runtime classes that represent concrete executions of design-time <a>Journey</a> definitions,
-    and aggregated analytics derived from those executions.
-    Runtime resources MAY reference design-time resources, but design-time resources MUST NOT embed runtime telemetry.
+    This section defines runtime classes that represent concrete executions of
+    design-time <a>Journey</a> definitions, and aggregated analytics derived
+    from those executions. Runtime resources MAY reference design-time
+    resources, but design-time resources MUST NOT embed runtime telemetry.
   </p>
 
   <section id="privacy" class="informative">
-  <h3 id="h3-privacy-and-personal-data">Privacy and Personal Data</h3>
-  <p>
-    This specification is designed primarily for <strong>structural journey models</strong>
-    and <strong>aggregated analytics</strong>. It does not require the collection of any
-    personal data.
-  </p>
-  <ul>
-    <li>
-      Identifiers used in runtime resources such as <code>JourneyRun.actor</code> 
-      SHOULD be <strong>pseudonymous</strong> and SHOULD NOT directly embed personal data
-      (for example, names, email addresses, phone numbers, or raw device identifiers).
-    </li>
-    <li>
-      <code>Metric</code> and <code>StepStatistics</code> resources are intended to carry
-      <strong>aggregated measurements</strong>. They MUST NOT be used to store raw personal
-      attributes or per-person identifiers.
-    </li>
-    <li>
-      Implementations that process personal data remain responsible for complying with
-      applicable privacy and data-protection regulations; such policies are out of scope
-      for this specification.
-    </li>
-  </ul>
-</section>
-
-
-  <section id="emotion-metric" data-dfn-for="Emotion Metric">
-    <h3 id="h3-ujm-emotion-and-ujm-metric"><dfn>ujm:Emotion</dfn> and <dfn>ujm:Metric</dfn></h3>
+    <h3 id="h3-privacy-and-personal-data">Privacy and Personal Data</h3>
     <p>
-      <code>Emotion</code> and <code>Metric</code> are imported runtime and analytics constructs.
-      They are used exclusively on runtime and analytics resources such as <a>StepEvent</a> and
-      <a>StepStatistics</a>.
+      This specification is designed primarily for
+      <strong>structural journey models</strong> and
+      <strong>aggregated analytics</strong>. It does not require the collection
+      of any personal data.
     </p>
     <ul>
       <li>
-        <strong>Emotion</strong> — describes observed or inferred emotional states and MAY include
-        supporting <code>evidence</code>.
+        Identifiers used in runtime resources such as
+        <code>JourneyRun.actor</code> SHOULD be
+        <strong>pseudonymous</strong> and SHOULD NOT directly embed personal
+        data (for example, names, email addresses, phone numbers, or raw device
+        identifiers).
       </li>
       <li>
-        <strong>Metric</strong> — describes measured values (e.g., status, conversion, duration),
-        with at least <code>name</code> and <code>value</code>, and MAY include <code>unit</code>,
+        <code>Metric</code> and <code>StepStatistics</code> resources are
+        intended to carry <strong>aggregated measurements</strong>. They MUST
+        NOT be used to store raw personal attributes or per-person identifiers.
+      </li>
+      <li>
+        Implementations that process personal data remain responsible for
+        complying with applicable privacy and data-protection regulations; such
+        policies are out of scope for this specification.
+      </li>
+    </ul>
+  </section>
+
+  <section id="emotion-metric" data-dfn-for="Emotion Metric">
+    <h3 id="h3-ujm-emotion-and-ujm-metric">
+      <dfn>ujm:Emotion</dfn> and <dfn>ujm:Metric</dfn>
+    </h3>
+    <p>
+      <code>Emotion</code> and <code>Metric</code> are imported runtime and
+      analytics constructs. They are used exclusively on runtime and analytics
+      resources such as <a>StepEvent</a> and <a>StepStatistics</a>.
+    </p>
+    <ul>
+      <li>
+        <strong>Emotion</strong> — describes observed or inferred emotional
+        states and MAY include supporting <code>evidence</code>.
+      </li>
+      <li>
+        <strong>Metric</strong> — describes measured values (e.g., status,
+        conversion, duration), with at least <code>name</code> and
+        <code>value</code>, and MAY include <code>unit</code>,
         <code>method</code>, and <code>sampleSize</code>.
       </li>
     </ul>
     <p>
-      <strong>Design-time resources (e.g., Journey, Step, Phase, Session, Touchpoint, Persona)
-      MUST NOT include <code>ujm:Emotion</code> or <code>ujm:Metric</code> instances.</strong>
-      Design assumptions and targets SHOULD be expressed as free-text or profile-specific extensions instead.
+      <strong
+        >Design-time resources (e.g., Journey, Step, Phase, Session, Touchpoint,
+        Persona) MUST NOT include <code>ujm:Emotion</code> or
+        <code>ujm:Metric</code> instances.</strong
+      >
+      Design assumptions and targets SHOULD be expressed as free-text or
+      profile-specific extensions instead.
     </p>
   </section>
 
   <section data-dfn-for="JourneyRun">
     <h3 id="h3-ujm-journeyrun"><dfn>ujm:JourneyRun</dfn></h3>
     <p>
-      A <code>JourneyRun</code> represents a single concrete execution (by a user, technical session, account,
-      or cohort) of a design-time <a>Journey</a>.
+      A <code>JourneyRun</code> represents a single concrete execution (by a
+      user, technical session, account, or cohort) of a design-time
+      <a>Journey</a>.
     </p>
     <table class="simple">
       <thead>
-        <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+        <tr>
+          <th>Property</th>
+          <th>Cardinality</th>
+          <th>Notes</th>
+        </tr>
       </thead>
       <tbody>
         <tr>
@@ -651,16 +822,17 @@ For deterministic composition:
           <td><code>journey</code></td>
           <td>1</td>
           <td>
-            IRI of the design-time <a>Journey</a> this run instantiates.
-            All <a>StepEvent</a>.step values in this run MUST be consistent with this Journey
-            and any nested callees referenced via <a>CallStep</a>.
+            IRI of the design-time <a>Journey</a> this run instantiates. All
+            <a>StepEvent</a>.step values in this run MUST be consistent with
+            this Journey and any nested callees referenced via <a>CallStep</a>.
           </td>
         </tr>
         <tr>
           <td><code>actor</code></td>
           <td>0..1</td>
           <td>
-            IRI of an abstract subject associated with this run (for example, a pseudonymous account key, a technical session ID, or a Persona).
+            IRI of an abstract subject associated with this run (for example, a
+            pseudonymous account key, a technical session ID, or a Persona).
           </td>
         </tr>
         <tr>
@@ -672,17 +844,22 @@ For deterministic composition:
           <td><code>stepEvents</code></td>
           <td>0..*</td>
           <td>
-    Array of references to, or embedded representations of, <a>StepEvent</a>s belonging to this run.
-    For analytical purposes, the sequence of events in a JourneyRun MUST be derived from
-    event-level properties such as <code>StepEvent.order</code> and/or <code>timestamp</code>.
-    The JSON array order (and any JSON-LD container semantics) is not normative for defining
-    the execution order of steps.
-  </td>
+            Array of references to, or embedded representations of,
+            <a>StepEvent</a>s belonging to this run. For analytical purposes,
+            the sequence of events in a JourneyRun MUST be derived from
+            event-level properties such as <code>StepEvent.order</code> and/or
+            <code>timestamp</code>. The JSON array order (and any JSON-LD
+            container semantics) is not normative for defining the execution
+            order of steps.
+          </td>
         </tr>
         <tr>
           <td><code>tags</code></td>
           <td>0..*</td>
-          <td>Run-level labels (e.g., experiment variant, segment, channel bundle).</td>
+          <td>
+            Run-level labels (e.g., experiment variant, segment, channel
+            bundle).
+          </td>
         </tr>
       </tbody>
     </table>
@@ -691,13 +868,18 @@ For deterministic composition:
   <section data-dfn-for="StepEvent">
     <h3 id="h3-ujm-stepevent"><dfn>ujm:StepEvent</dfn></h3>
     <p>
-      A <code>StepEvent</code> represents one concrete occurrence of a design-time <a>Step</a> within a
-      <a>JourneyRun</a>. It is the canonical location for recording observed timestamps, durations, metrics,
-      and emotions.
+      A <code>StepEvent</code> represents one concrete occurrence of a
+      design-time <a>Step</a> within a <a>JourneyRun</a>. It is the canonical
+      location for recording observed timestamps, durations, metrics, and
+      emotions.
     </p>
     <table class="simple">
       <thead>
-        <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+        <tr>
+          <th>Property</th>
+          <th>Cardinality</th>
+          <th>Notes</th>
+        </tr>
       </thead>
       <tbody>
         <tr>
@@ -714,11 +896,17 @@ For deterministic composition:
           <td><code>step</code></td>
           <td>1</td>
           <td>
-            IRI of the design-time <a>Step</a> instantiated by this event.
-            The referenced Step MUST belong to:
+            IRI of the design-time <a>Step</a> instantiated by this event. The
+            referenced Step MUST belong to:
             <ul>
-              <li>the Journey identified by the parent <a>JourneyRun</a>.journey, or</li>
-              <li>a callee Journey referenced via a <a>CallStep</a> in that Journey.</li>
+              <li>
+                the Journey identified by the parent <a>JourneyRun</a>.journey,
+                or
+              </li>
+              <li>
+                a callee Journey referenced via a <a>CallStep</a> in that
+                Journey.
+              </li>
             </ul>
           </td>
         </tr>
@@ -731,44 +919,47 @@ For deterministic composition:
           <td><code>timestamp</code></td>
           <td>0..1</td>
           <td>
-            ISO 8601 date-time when the step occurrence started (or was observed).
+            ISO 8601 date-time when the step occurrence started (or was
+            observed).
           </td>
         </tr>
         <tr>
           <td><code>duration</code></td>
           <td>0..1</td>
-          <td>
-            ISO 8601 duration for this occurrence.
-          </td>
+          <td>ISO 8601 duration for this occurrence.</td>
         </tr>
         <tr>
           <td><code>emotions</code></td>
           <td>0..*</td>
-          <td>Array of observed <a>Emotion</a> values associated with this occurrence.</td>
+          <td>
+            Array of observed <a>Emotion</a> values associated with this
+            occurrence.
+          </td>
         </tr>
         <tr>
           <td><code>metrics</code></td>
           <td>0..*</td>
           <td>
-            Array of observed <a>Metric</a> values
-            (e.g., <code>{"name":"status","value":"success"}</code>).
+            Array of observed <a>Metric</a> values (e.g.,
+            <code>{"name":"status","value":"success"}</code>).
           </td>
         </tr>
         <tr>
           <td><code>order</code></td>
           <td>0..1</td>
           <td>
-            Sequence index (number or string) of this event within its JourneyRun.
-            Ordering is profile-specific.
+            Sequence index (number or string) of this event within its
+            JourneyRun. Ordering is profile-specific.
           </td>
         </tr>
         <tr>
           <td><code>calleeRun</code></td>
           <td>0..1</td>
           <td>
-            For events whose <code>step</code> is a <a>CallStep</a>, IRI of a nested
-            <a>JourneyRun</a> representing execution of the callee Journey.
-            If present, <code>calleeRun.journey</code> MUST equal the <code>CallStep.calls</code> Journey.
+            For events whose <code>step</code> is a <a>CallStep</a>, IRI of a
+            nested <a>JourneyRun</a> representing execution of the callee
+            Journey. If present, <code>calleeRun.journey</code> MUST equal the
+            <code>CallStep.calls</code> Journey.
           </td>
         </tr>
       </tbody>
@@ -778,12 +969,17 @@ For deterministic composition:
   <section data-dfn-for="StepStatistics">
     <h3 id="h3-ujm-stepstatistics"><dfn>ujm:StepStatistics</dfn></h3>
     <p>
-      A <code>StepStatistics</code> resource captures aggregated metrics or emotion distributions for a given
-      design-time <a>Step</a> over a defined set of <a>StepEvent</a>s (e.g., a time window, cohort, or experiment).
+      A <code>StepStatistics</code> resource captures aggregated metrics or
+      emotion distributions for a given design-time <a>Step</a> over a defined
+      set of <a>StepEvent</a>s (e.g., a time window, cohort, or experiment).
     </p>
     <table class="simple">
       <thead>
-        <tr><th>Property</th><th>Cardinality</th><th>Notes</th></tr>
+        <tr>
+          <th>Property</th>
+          <th>Cardinality</th>
+          <th>Notes</th>
+        </tr>
       </thead>
       <tbody>
         <tr>
@@ -805,20 +1001,25 @@ For deterministic composition:
           <td><code>journey</code></td>
           <td>0..1</td>
           <td>
-            IRI of the <a>Journey</a> context, if applicable (e.g., when a Step appears in multiple Journeys).
+            IRI of the <a>Journey</a> context, if applicable (e.g., when a Step
+            appears in multiple Journeys).
           </td>
         </tr>
         <tr>
           <td><code>scope</code></td>
           <td>0..1</td>
           <td>
-            String or object describing the aggregation scope (e.g., time window, cohort, experiment).
+            String or object describing the aggregation scope (e.g., time
+            window, cohort, experiment).
           </td>
         </tr>
         <tr>
           <td><code>metrics</code></td>
           <td>0..*</td>
-          <td>Array of aggregated <a>Metric</a> values (e.g., conversion rate, average duration).</td>
+          <td>
+            Array of aggregated <a>Metric</a> values (e.g., conversion rate,
+            average duration).
+          </td>
         </tr>
         <tr>
           <td><code>emotions</code></td>
@@ -834,8 +1035,8 @@ For deterministic composition:
           <td><code>derivedFrom</code></td>
           <td>0..*</td>
           <td>
-            IRIs or identifiers of underlying datasets, <a>JourneyRun</a>s, or queries from which
-            these statistics were computed.
+            IRIs or identifiers of underlying datasets, <a>JourneyRun</a>s, or
+            queries from which these statistics were computed.
           </td>
         </tr>
       </tbody>
@@ -843,26 +1044,30 @@ For deterministic composition:
   </section>
 
   <section id="runtime-relationships">
-    <h3 id="h3-relationship-to-phases-sessions-and-callstep">Relationship to Phases, Sessions, and CallStep</h3>
+    <h3 id="h3-relationship-to-phases-sessions-and-callstep">
+      Relationship to Phases, Sessions, and CallStep
+    </h3>
     <ul>
       <li>
         <strong>Phases and Sessions.</strong>
-        Let <code>E</code> be a <a>StepEvent</a> with <code>journeyRun = R</code>,
-        and let <code>J = R.journey</code>.
-        For each <a>Phase</a> or <a>Session</a> in <code>J</code> whose <a>StepRef</a>
-        <code>step</code> equals <code>E.step</code>, <code>E</code> is considered a member of that
-        Phase/Session for analytical purposes.
-        A StepEvent MAY thus belong to multiple Phases and Sessions.
-        Aggregated metrics for Phases/Sessions SHOULD be computed from their member StepEvents and MAY be
-        exposed via additional statistics resources.
+        Let <code>E</code> be a <a>StepEvent</a> with
+        <code>journeyRun = R</code>, and let <code>J = R.journey</code>. For
+        each <a>Phase</a> or <a>Session</a> in <code>J</code> whose
+        <a>StepRef</a> <code>step</code> equals <code>E.step</code>,
+        <code>E</code> is considered a member of that Phase/Session for
+        analytical purposes. A StepEvent MAY thus belong to multiple Phases and
+        Sessions. Aggregated metrics for Phases/Sessions SHOULD be computed from
+        their member StepEvents and MAY be exposed via additional statistics
+        resources.
       </li>
       <li>
         <strong>CallStep.</strong>
-        At design time, a <a>CallStep</a> is a <a>Step</a> that references a callee Journey.
-        At runtime, a <a>StepEvent</a> whose <code>step</code> is a CallStep MAY reference a
-        nested <a>JourneyRun</a> via <code>calleeRun</code>.
-        Statistics for the CallStep MAY be derived from the corresponding nested JourneyRuns
-        and exposed as <a>StepStatistics</a> for that CallStep.
+        At design time, a <a>CallStep</a> is a <a>Step</a> that references a
+        callee Journey. At runtime, a <a>StepEvent</a> whose
+        <code>step</code> is a CallStep MAY reference a nested
+        <a>JourneyRun</a> via <code>calleeRun</code>. Statistics for the
+        CallStep MAY be derived from the corresponding nested JourneyRuns and
+        exposed as <a>StepStatistics</a> for that CallStep.
       </li>
     </ul>
   </section>
@@ -871,12 +1076,14 @@ For deterministic composition:
 <section id="json-ld" class="normative">
   <h2 id="h2-json-ld">JSON-LD</h2>
   <p>
-    This section provides a normative JSON-LD context for compact JSON representations of UJM resources.
-    Implementations MAY extend this context but MUST preserve the semantics of terms defined here.
+    This section provides a normative JSON-LD context for compact JSON
+    representations of UJM resources. Implementations MAY extend this context
+    but MUST preserve the semantics of terms defined here.
   </p>
 
   <aside class="example" title="UJM JSON-LD Context">
-    <pre class="json">{
+    <pre class="json">
+{
   "@context": {
     "@vocab": "https://www.openuji.org/ns/ujm#",
 
@@ -910,18 +1117,24 @@ For deterministic composition:
     "stepEvents": { "@container": "@set" },
     "members": { "@container": "@set" }
   }
-}</pre>
+}</pre
+    >
   </aside>
 
-  <p>
-    With this context:
-  </p>
+  <p>With this context:</p>
   <ul>
-    <li><code>"Journey"</code>, <code>"Step"</code>, <code>"JourneyRun"</code>, etc. in <code>type</code>
-        expand to their <code>ujm:</code> IRIs via <code>@vocab</code>.</li>
-    <li>Properties declared with <code>"@type": "@id"</code> are interpreted as IRIs.</li>
     <li>
-      The same compact JSON documents can serve as both JSON and RDF, ensuring that normative requirements on
+      <code>"Journey"</code>, <code>"Step"</code>, <code>"JourneyRun"</code>,
+      etc. in <code>type</code> expand to their <code>ujm:</code> IRIs via
+      <code>@vocab</code>.
+    </li>
+    <li>
+      Properties declared with <code>"@type": "@id"</code> are interpreted as
+      IRIs.
+    </li>
+    <li>
+      The same compact JSON documents can serve as both JSON and RDF, ensuring
+      that normative requirements on
       <code>ujm:*</code> classes apply directly.
     </li>
   </ul>
@@ -929,15 +1142,20 @@ For deterministic composition:
 
 <section id="implementation-profile" class="informative">
   <h2 id="h2-implementation-profile-example">Implementation Profile Example</h2>
-  <p>
-    This section provides a concise end-to-end example showing:
-  </p>
+  <p>This section provides a concise end-to-end example showing:</p>
   <ul>
-    <li>a design-time <code>Journey</code> that uses a <code>CallStep</code> to invoke a nested callee <code>Journey</code>, and</li>
-    <li>runtime <code>JourneyRun</code> and <code>StepEvent</code> resources, including a nested <code>calleeRun</code>,</li>
+    <li>
+      a design-time <code>Journey</code> that uses a <code>CallStep</code> to
+      invoke a nested callee <code>Journey</code>, and
+    </li>
+    <li>
+      runtime <code>JourneyRun</code> and <code>StepEvent</code> resources,
+      including a nested <code>calleeRun</code>,
+    </li>
   </ul>
   <p>
-    The example is expressed in compact JSON-LD using the context defined in <a href="#json-ld">JSON-LD</a>
+    The example is expressed in compact JSON-LD using the context defined in
+    <a href="#json-ld">JSON-LD</a>
     and is constructed to validate against the illustrative JSON Schema in
     <a href="#appendix-json-schema">Appendix A</a>.
   </p>
@@ -947,16 +1165,20 @@ For deterministic composition:
 </section>
 
 <section id="appendix-json-schema" class="appendix informative">
-  <h2 id="h2-appendix-a-json-schema-illustrative-extract">Appendix A: JSON Schema (Illustrative Extract)</h2>
+  <h2 id="h2-appendix-a-json-schema-illustrative-extract">
+    Appendix A: JSON Schema (Illustrative Extract)
+  </h2>
   <p>
-    This appendix sketches JSON Schema fragments aligned with the design-time / runtime split.
-    The schema targets the compact JSON form used together with the JSON-LD context in
-    <a href="#json-ld">JSON-LD</a>. Type values like <code>"Step"</code> or <code>"JourneyRun"</code>
-    are understood to expand via <code>@vocab</code> to the corresponding <code>ujm:</code> IRIs.
+    This appendix sketches JSON Schema fragments aligned with the design-time /
+    runtime split. The schema targets the compact JSON form used together with
+    the JSON-LD context in
+    <a href="#json-ld">JSON-LD</a>. Type values like <code>"Step"</code> or
+    <code>"JourneyRun"</code> are understood to expand via
+    <code>@vocab</code> to the corresponding <code>ujm:</code> IRIs.
   </p>
 
-
-  <pre class="json">{
+  <pre class="json">
+{
   "$defs": {
 
     "Step": {
@@ -1117,12 +1339,13 @@ For deterministic composition:
 
   }
 }
-</pre>
+</pre
+  >
 
   <p>
-    These fragments are non-normative and intentionally permissive.
-    They do not capture all normative constraints (such as the prohibition on Emotion/Metric in design-time
-    resources or all IRI requirements). In case of conflict, the normative model and JSON-LD semantics
-    take precedence.
+    These fragments are non-normative and intentionally permissive. They do not
+    capture all normative constraints (such as the prohibition on Emotion/Metric
+    in design-time resources or all IRI requirements). In case of conflict, the
+    normative model and JSON-LD semantics take precedence.
   </p>
 </section>

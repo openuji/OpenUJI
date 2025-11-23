@@ -64,7 +64,7 @@ export function Toolbar({
           <Printer className="h-4 w-4" />
           <span>Print / PDF</span>
         </Button>
-        </div>
+      </div>
     </div>
   );
 }

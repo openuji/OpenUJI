@@ -4,17 +4,16 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-
   /* Spacing tokens in rem */
   --spacing: 0.25rem; /* 4px base */
-  --space-1: 0.25rem;  /* 4px  */
-  --space-2: 0.5rem;   /* 8px  */
-  --space-3: 0.75rem;  /* 12px */
-  --space-4: 1rem;     /* 16px */
-  --space-6: 1.5rem;   /* 24px */
-  --space-8: 2rem;     /* 32px */
-  --space-12: 3rem;    /* 48px */
-  --space-16: 4rem;    /* 64px */
+  --space-1: 0.25rem; /* 4px  */
+  --space-2: 0.5rem; /* 8px  */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
 
   /* Layout constraints  */
   --content-max-desktop: 760px;
@@ -70,8 +69,10 @@
   /* Elevation */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   /* Radius tokens */
   --radius-sm: 4px;
@@ -100,36 +101,36 @@
   --font-size: calc(100% * 1); /* 14px base */
 
   /* Typography scale - Desktop (rem, comment shows px equivalent) */
-  --text-h1-desktop: 1.75rem;   /* 28px */
-  --text-h2-desktop: 1.375rem;  /* 22px */
-  --text-h3-desktop: 1.125rem;  /* 18px */
-  --text-body-desktop: 1rem;    /* 16px */
-  --text-small-desktop: 0.875rem;  /* 14px */
-  --text-code-desktop: 0.875rem;   /* 14px */
+  --text-h1-desktop: 1.75rem; /* 28px */
+  --text-h2-desktop: 1.375rem; /* 22px */
+  --text-h3-desktop: 1.125rem; /* 18px */
+  --text-body-desktop: 1rem; /* 16px */
+  --text-small-desktop: 0.875rem; /* 14px */
+  --text-code-desktop: 0.875rem; /* 14px */
 
   /* Typography scale - Mobile (rem) */
-  --text-h1-mobile: 1.5rem;      /* 24px */
-  --text-h2-mobile: 1.25rem;     /* 20px */
-  --text-h3-mobile: 1.125rem;    /* 18px */
-  --text-body-mobile: 1rem;      /* 16px */
+  --text-h1-mobile: 1.5rem; /* 24px */
+  --text-h2-mobile: 1.25rem; /* 20px */
+  --text-h3-mobile: 1.125rem; /* 18px */
+  --text-body-mobile: 1rem; /* 16px */
   --text-small-mobile: 0.875rem; /* 14px */
   --text-code-mobile: 0.8125rem; /* 13px */
 
   /* Line heights in rem (still based on 16px) */
-  --lh-h1-desktop: 2.25rem;   /* 36px */
-  --lh-h2-desktop: 1.875rem;  /* 30px */
-  --lh-h3-desktop: 1.625rem;  /* 26px */
-  --lh-body: 1.5rem;          /* 24px */
-  --lh-small: 1.375rem;       /* 22px */
+  --lh-h1-desktop: 2.25rem; /* 36px */
+  --lh-h2-desktop: 1.875rem; /* 30px */
+  --lh-h3-desktop: 1.625rem; /* 26px */
+  --lh-body: 1.5rem; /* 24px */
+  --lh-small: 1.375rem; /* 22px */
   --lh-code-desktop: 1.25rem; /* 20px */
 
-  --lh-h1-mobile: 2rem;       /* 32px */
-  --lh-h2-mobile: 1.75rem;    /* 28px */
-  --lh-h3-mobile: 1.5rem;     /* 24px */
+  --lh-h1-mobile: 2rem; /* 32px */
+  --lh-h2-mobile: 1.75rem; /* 28px */
+  --lh-h3-mobile: 1.5rem; /* 24px */
   --lh-small-mobile: 1.25rem; /* 20px */
   --lh-code-mobile: 1.125rem; /* 18px */
 
-    /* Font weights */
+  /* Font weights */
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -175,7 +176,7 @@
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08)
+  --chart-5: oklch(0.769 0.188 70.08);
 }
 
 .dark {
@@ -217,8 +218,10 @@
   /* Elevation - Dark */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
 
   /* Sidebar variables - Dark */
   --sidebar: oklch(0.205 0 0);
@@ -237,7 +240,7 @@
   --chart-5: oklch(0.645 0.246 16.439);
 }
 
-@theme inline{
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -296,82 +299,93 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      "Roboto",
+      sans-serif;
   }
 
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', 'Roboto Mono', 'Fira Code', monospace;
+  code,
+  pre,
+  .font-mono {
+    font-family: "JetBrains Mono", "Roboto Mono", "Fira Code", monospace;
   }
 }
 
 /* Responsive typography */
 @layer base {
-    h1 {
-      font-size: var(--text-h1);
-      line-height: var(--lh-h1);
-      font-weight: var(--font-weight-semibold);
-      letter-spacing: -0.025em;
-    }
+  h1 {
+    font-size: var(--text-h1);
+    line-height: var(--lh-h1);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.025em;
+  }
 
-    h2 {
-      font-size: var(--text-h2);
-      line-height: var(--lh-h2);
-      font-weight: var(--font-weight-semibold);
-      letter-spacing: -0.025em;
-    }
+  h2 {
+    font-size: var(--text-h2);
+    line-height: var(--lh-h2);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.025em;
+  }
 
-    h3 {
-      font-size: var(--text-h3);
-      line-height: var(--lh-h3);
-      font-weight: var(--font-weight-semibold);
-    }
+  h3 {
+    font-size: var(--text-h3);
+    line-height: var(--lh-h3);
+    font-weight: var(--font-weight-semibold);
+  }
 
-    h4 {
-      font-size: var(--text-h4);
-      line-height: var(--lh-h4);
-      font-weight: var(--font-weight-semibold);
-    } 
+  h4 {
+    font-size: var(--text-h4);
+    line-height: var(--lh-h4);
+    font-weight: var(--font-weight-semibold);
+  }
 
-    h5, h6 {
-      font-size: var(--text-body);
-      line-height: var(--lh-body);
-      font-weight: var(--font-weight-semibold);
-    }
+  h5,
+  h6 {
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    font-weight: var(--font-weight-semibold);
+  }
 
-    p {
-      font-size: var(--text-body);
-      line-height: var(--lh-body);
-      font-weight: var(--font-weight-normal);
-    }
+  p {
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    font-weight: var(--font-weight-normal);
+  }
 
-    label {
-      font-size: var(--text-body);
-      line-height: var(--lh-body);
-      font-weight: var(--font-weight-medium);
-    }
+  label {
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    font-weight: var(--font-weight-medium);
+  }
 
-    button {
-      font-size: var(--text-body);
-      line-height: var(--lh-body);
-      font-weight: var(--font-weight-medium);
-    }
+  button {
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    font-weight: var(--font-weight-medium);
+  }
 
-    input, textarea, select {
-      font-size: var(--text-body);
-      line-height: var(--lh-body);
-      font-weight: var(--font-weight-normal);
-    }
+  input,
+  textarea,
+  select {
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    font-weight: var(--font-weight-normal);
+  }
 
-    code {
-      font-size: var(--text-code);
-      line-height: var(--lh-code);
-    }
+  code {
+    font-size: var(--text-code);
+    line-height: var(--lh-code);
+  }
 
-    small, .text-small {
-      font-size: var(--text-small);
-      line-height: var(--lh-small);
-    }
-
+  small,
+  .text-small {
+    font-size: var(--text-small);
+    line-height: var(--lh-small);
+  }
 }
 
 /* Focus styles for accessibility */
@@ -381,7 +395,6 @@
     outline-offset: var(--focus-offset);
     border-radius: var(--radius-sm);
   }
-
 }
 
 /* Print styles */
@@ -396,11 +409,17 @@
     display: none !important;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     break-after: avoid;
   }
 
-  p, li {
+  p,
+  li {
     break-inside: avoid;
   }
 
@@ -498,12 +517,10 @@
     @apply my-6 rounded-lg border bg-muted/30 overflow-x-auto p-4 
            text-sm font-mono leading-relaxed text-foreground;
   } */
-
 }
 
 /* Utility classes for responsive constraints */
 @layer utilities {
-
   .fluid-container {
     @apply px-6 mx-auto;
   }
@@ -528,7 +545,6 @@
   .text-pretty {
     text-wrap: pretty;
   }
-
 }
 
 html {
@@ -536,8 +552,7 @@ html {
   scroll-behavior: smooth;
 }
 body {
-    overscroll-behavior-y: none;
-
+  overscroll-behavior-y: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

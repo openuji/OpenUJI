@@ -1,46 +1,111 @@
 <section id="abstract">
   <p>
-    User Journey Hash-Chain Tracking (UJHT) defines a hash-chain-based, privacy-preserving mechanism for measuring a visitor’s in-session navigation path ("user journey") without cookies, local persistent identifiers, or device fingerprinting. UJHT relies on an ephemeral, client-held secret seed to compute a one-way hash chain across sequential events. Each transmitted event contains only the current hash, the previous hash, and a minimal payload. Servers stitch events into journeys by matching <code>prev → curr</code> edges without learning or inferring a stable user identifier.
+    User Journey Hash-Chain Tracking (UJHT) defines a hash-chain-based,
+    privacy-preserving mechanism for measuring a visitor’s in-session navigation
+    path ("user journey") without cookies, local persistent identifiers, or
+    device fingerprinting. UJHT relies on an ephemeral, client-held secret seed
+    to compute a one-way hash chain across sequential events. Each transmitted
+    event contains only the current hash, the previous hash, and a minimal
+    payload. Servers stitch events into journeys by matching
+    <code>prev → curr</code> edges without learning or inferring a stable user
+    identifier.
   </p>
   <p>
-    This draft additionally specifies a <em>Journey Catalog</em> control plane. The catalog defines step keys and allowed transitions (edges). Clients emit human-readable step hints via namespaced <code>x-*</code> payload members; servers validate against the catalog while remaining agnostic to the client’s secret seed.
+    This draft additionally specifies a <em>Journey Catalog</em> control plane.
+    The catalog defines step keys and allowed transitions (edges). Clients emit
+    human-readable step hints via namespaced <code>x-*</code> payload members;
+    servers validate against the catalog while remaining agnostic to the
+    client’s secret seed.
   </p>
 </section>
 
 <section id="sotd">
-  <p>This is an Editor’s Draft and may change at any time. Feedback is welcome via the issue tracker.</p>
+  <p>
+    This is an Editor’s Draft and may change at any time. Feedback is welcome
+    via the issue tracker.
+  </p>
 </section>
 
 <section>
   <h2 id="intro">Introduction</h2>
   <p>
-    Traditional web analytics depend on cookies or fingerprinting to recognize visitors across page loads; these approaches raise privacy and regulatory concerns. UJHT provides a session-scoped alternative that avoids persistent identifiers while enabling ordered in-session path analysis for MPAs and SPAs. The hybrid control-plane model lets design and product stakeholders evolve a journey graph in parallel with implementation while the client independently computes the cryptographic chain.
+    Traditional web analytics depend on cookies or fingerprinting to recognize
+    visitors across page loads; these approaches raise privacy and regulatory
+    concerns. UJHT provides a session-scoped alternative that avoids persistent
+    identifiers while enabling ordered in-session path analysis for MPAs and
+    SPAs. The hybrid control-plane model lets design and product stakeholders
+    evolve a journey graph in parallel with implementation while the client
+    independently computes the cryptographic chain.
   </p>
 </section>
 
 <section>
   <h2 id="conformance">Conformance</h2>
-  <p>The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>, and <em class="rfc2119">MAY</em> are to be interpreted as described in RFC 2119 and RFC 8174.</p>
+  <p>
+    The key words <em class="rfc2119">MUST</em>,
+    <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em>, and
+    <em class="rfc2119">MAY</em> are to be interpreted as described in RFC 2119
+    and RFC 8174.
+  </p>
   <p>Conformance classes:</p>
   <ul>
-    <li><strong>Client Implementations</strong> <em class="rfc2119">MUST</em> follow <a href="#client">§ Client Processing Model</a> and <a href="#privacy">§ Privacy Requirements</a>.</li>
-    <li><strong>Server Implementations</strong> <em class="rfc2119">MUST</em> follow <a href="#server">§ Server Processing Model</a> and <a href="#privacy">§ Privacy Requirements</a>.</li>
-    <li><strong>Controllers of the Journey Catalog</strong> <em class="rfc2119">MUST</em> follow <a href="#catalog">§ Journey Catalog</a>.</li>
-    <li><strong>Analytics Processors</strong> (downstream) <em class="rfc2119">MUST</em> follow <a href="#privacy">§ Privacy Requirements</a> and <a href="#interop">§ Interoperability</a>.</li>
+    <li>
+      <strong>Client Implementations</strong>
+      <em class="rfc2119">MUST</em> follow
+      <a href="#client">§ Client Processing Model</a> and
+      <a href="#privacy">§ Privacy Requirements</a>.
+    </li>
+    <li>
+      <strong>Server Implementations</strong>
+      <em class="rfc2119">MUST</em> follow
+      <a href="#server">§ Server Processing Model</a> and
+      <a href="#privacy">§ Privacy Requirements</a>.
+    </li>
+    <li>
+      <strong>Controllers of the Journey Catalog</strong>
+      <em class="rfc2119">MUST</em> follow
+      <a href="#catalog">§ Journey Catalog</a>.
+    </li>
+    <li>
+      <strong>Analytics Processors</strong> (downstream)
+      <em class="rfc2119">MUST</em> follow
+      <a href="#privacy">§ Privacy Requirements</a> and
+      <a href="#interop">§ Interoperability</a>.
+    </li>
   </ul>
 </section>
 
 <section>
   <h2 id="terms">Terminology</h2>
   <dl>
-    <dt>Client</dt><dd>User agent executing site JavaScript.</dd>
-    <dt>Server</dt><dd>First-party collection endpoint receiving UJHT events.</dd>
-    <dt>Session</dt><dd>Single, ephemeral browsing context (tab/window lifetime).</dd>
-    <dt>Seed (<code>S</code>)</dt><dd>Cryptographically random secret generated per session and retained only client-side.</dd>
-    <dt>Event</dt><dd>Minimal record describing a step in the journey.</dd>
-    <dt>Hash chain</dt><dd>Sequence where each event hash commits to its payload and the previous hash.</dd>
-    <dt>Journey Catalog</dt><dd>A versioned server-side registry of step keys and allowed edges (control plane).</dd>
-    <dt>Step key</dt><dd>Human-readable identifier for a journey step (e.g., <code>onboarding.enter_email@v3</code>).</dd>
+    <dt>Client</dt>
+    <dd>User agent executing site JavaScript.</dd>
+    <dt>Server</dt>
+    <dd>First-party collection endpoint receiving UJHT events.</dd>
+    <dt>Session</dt>
+    <dd>Single, ephemeral browsing context (tab/window lifetime).</dd>
+    <dt>Seed (<code>S</code>)</dt>
+    <dd>
+      Cryptographically random secret generated per session and retained only
+      client-side.
+    </dd>
+    <dt>Event</dt>
+    <dd>Minimal record describing a step in the journey.</dd>
+    <dt>Hash chain</dt>
+    <dd>
+      Sequence where each event hash commits to its payload and the previous
+      hash.
+    </dd>
+    <dt>Journey Catalog</dt>
+    <dd>
+      A versioned server-side registry of step keys and allowed edges (control
+      plane).
+    </dd>
+    <dt>Step key</dt>
+    <dd>
+      Human-readable identifier for a journey step (e.g.,
+      <code>onboarding.enter_email@v3</code>).
+    </dd>
   </dl>
 </section>
 
@@ -49,8 +114,12 @@
 
   <section>
     <h3 id="event-object">Event Object</h3>
-    <p>Each event sent by the client <em class="rfc2119">MUST</em> be a JSON object:</p>
-<pre class="code" aria-label="Event JSON">{
+    <p>
+      Each event sent by the client <em class="rfc2119">MUST</em> be a JSON
+      object:
+    </p>
+    <pre class="code" aria-label="Event JSON">
+{
   "v": 1,
   "curr": "&lt;hex-encoded hash&gt;",
   "prev": "&lt;hex-encoded hash or empty string&gt;",
@@ -64,52 +133,115 @@
     "x-catalog": "2025-08-04T12:00Z",
     "x-variant": "A"
   }
-}</pre>
+}</pre
+    >
     <p><strong>Fields</strong></p>
     <ul>
-      <li><code>v</code> — protocol version (this spec defines <code>1</code>).</li>
-      <li><code>curr</code> — lowercase hex of current event hash <code>h<sub>i</sub></code>. For <code>v = 1</code>, this <em class="rfc2119">MUST</em> be 64 hexadecimal characters (HMAC-SHA-256 output).</li>
-      <li><code>prev</code> — lowercase hex of previous event hash <code>h<sub>i-1</sub></code> or empty string for root events; for <code>v = 1</code> this <em class="rfc2119">MUST</em> be empty or 64 hexadecimal characters.</li>
-      <li><code>payload</code> — minimal event data. Required members:
+      <li>
+        <code>v</code> — protocol version (this spec defines <code>1</code>).
+      </li>
+      <li>
+        <code>curr</code> — lowercase hex of current event hash
+        <code>h<sub>i</sub></code
+        >. For <code>v = 1</code>, this <em class="rfc2119">MUST</em> be 64
+        hexadecimal characters (HMAC-SHA-256 output).
+      </li>
+      <li>
+        <code>prev</code> — lowercase hex of previous event hash
+        <code>h<sub>i-1</sub></code> or empty string for root events; for
+        <code>v = 1</code> this <em class="rfc2119">MUST</em> be empty or 64
+        hexadecimal characters.
+      </li>
+      <li>
+        <code>payload</code> — minimal event data. Required members:
         <ul>
-          <li><code>path</code> — normalized page path or route identifier; <em class="rfc2119">MUST NOT</em> include PII.</li>
-          <li><code>event</code> — event type token (e.g., <code>"view"</code>, <code>"action:signup"</code>).</li>
-          <li><code>ts</code> — Unix epoch ms; <em class="rfc2119">SHOULD</em> be rounded (see <a href="#privacy">§ Privacy Requirements</a>).</li>
-          <li><code>ref</code> — referrer origin or empty string. Clients <em class="rfc2119">MUST NOT</em> include path, query, or fragment components.</li>
+          <li>
+            <code>path</code> — normalized page path or route identifier;
+            <em class="rfc2119">MUST NOT</em> include PII.
+          </li>
+          <li>
+            <code>event</code> — event type token (e.g., <code>"view"</code>,
+            <code>"action:signup"</code>).
+          </li>
+          <li>
+            <code>ts</code> — Unix epoch ms; <em class="rfc2119">SHOULD</em> be
+            rounded (see <a href="#privacy">§ Privacy Requirements</a>).
+          </li>
+          <li>
+            <code>ref</code> — referrer origin or empty string. Clients
+            <em class="rfc2119">MUST NOT</em> include path, query, or fragment
+            components.
+          </li>
         </ul>
       </li>
     </ul>
     <p>
-      Additional namespaced members under <code>payload</code> whose keys begin with <code>x-</code> are permitted; servers <em class="rfc2119">MUST</em> ignore unknown members. When a Journey Catalog is enabled (<a href="#catalog">§ Journey Catalog</a>), clients <em class="rfc2119">SHOULD</em> include:
+      Additional namespaced members under <code>payload</code> whose keys begin
+      with <code>x-</code> are permitted; servers
+      <em class="rfc2119">MUST</em> ignore unknown members. When a Journey
+      Catalog is enabled (<a href="#catalog">§ Journey Catalog</a>), clients
+      <em class="rfc2119">SHOULD</em> include:
     </p>
     <ul>
-      <li><code>x-step</code> — step key for this event. <em class="rfc2119">MUST</em> be included if the deployment enforces catalog validation.</li>
+      <li>
+        <code>x-step</code> — step key for this event.
+        <em class="rfc2119">MUST</em> be included if the deployment enforces
+        catalog validation.
+      </li>
       <li><code>x-journey</code> — optional journey/funnel name.</li>
-      <li><code>x-catalog</code> — catalog version identifier (e.g., timestamp or semantic version).</li>
+      <li>
+        <code>x-catalog</code> — catalog version identifier (e.g., timestamp or
+        semantic version).
+      </li>
       <li><code>x-variant</code> — optional experiment or variant label.</li>
     </ul>
     <p>
-      Values of <code>x-*</code> members <em class="rfc2119">SHOULD</em> be short, low-cardinality ASCII tokens (max 256 chars) and <em class="rfc2119">MUST NOT</em> contain PII, hashed or encrypted PII, or per-user stable identifiers.
+      Values of <code>x-*</code> members <em class="rfc2119">SHOULD</em> be
+      short, low-cardinality ASCII tokens (max 256 chars) and
+      <em class="rfc2119">MUST NOT</em> contain PII, hashed or encrypted PII, or
+      per-user stable identifiers.
     </p>
   </section>
 
   <section>
     <h3 id="canonicalization">Canonicalization</h3>
-    <p>Clients <em class="rfc2119">MUST</em> canonicalize <code>payload</code> using the JSON Canonicalization Scheme (JCS) or an equivalent scheme that produces a stable byte sequence for the same semantic JSON object.</p>
-    <pre class="code" aria-label="Hash input">CANON(payload) || "|" || prev</pre>
+    <p>
+      Clients <em class="rfc2119">MUST</em> canonicalize
+      <code>payload</code> using the JSON Canonicalization Scheme (JCS) or an
+      equivalent scheme that produces a stable byte sequence for the same
+      semantic JSON object.
+    </p>
+    <pre class="code" aria-label="Hash input">
+CANON(payload) || "|" || prev</pre
+    >
   </section>
 
   <section>
     <h3 id="hashing">Hash Algorithm</h3>
     <p>
-      For protocol version <code>v = 1</code>, clients <em class="rfc2119">MUST</em> compute
-      <code>h<sub>i</sub> = HMAC_SHA256(S, CANON(payload) || "|" || h<sub>i-1</sub>)</code> and encode the 32-byte output as lowercase hex (64 characters). The initial predecessor <code>h<sub>-1</sub></code> is defined as the empty string (<code>""</code>), and the corresponding root event <em class="rfc2119">MUST</em> set <code>prev</code> to <code>""</code>.
+      For protocol version <code>v = 1</code>, clients
+      <em class="rfc2119">MUST</em> compute
+      <code
+        >h<sub>i</sub> = HMAC_SHA256(S, CANON(payload) || "|" ||
+        h<sub>i-1</sub>)</code
+      >
+      and encode the 32-byte output as lowercase hex (64 characters). The
+      initial predecessor <code>h<sub>-1</sub></code> is defined as the empty
+      string (<code>""</code>), and the corresponding root event
+      <em class="rfc2119">MUST</em> set <code>prev</code> to <code>""</code>.
     </p>
     <p>
-      Seeds <em class="rfc2119">MUST</em> be generated with at least 128 bits of entropy (256 bits recommended) using a cryptographically secure random source (for example, <code>crypto.getRandomValues()</code> in Web Crypto), and <em class="rfc2119">MUST NOT</em> be transmitted, persisted, or shared across sessions.
+      Seeds <em class="rfc2119">MUST</em> be generated with at least 128 bits of
+      entropy (256 bits recommended) using a cryptographically secure random
+      source (for example, <code>crypto.getRandomValues()</code> in Web Crypto),
+      and <em class="rfc2119">MUST NOT</em> be transmitted, persisted, or shared
+      across sessions.
     </p>
     <p>
-      This specification fixes the hash construction for <code>v = 1</code> to HMAC-SHA-256. Future protocol versions <em class="rfc2119">MAY</em> define additional constructions with distinct <code>v</code> values and corresponding schema updates.
+      This specification fixes the hash construction for <code>v = 1</code> to
+      HMAC-SHA-256. Future protocol versions <em class="rfc2119">MAY</em> define
+      additional constructions with distinct <code>v</code> values and
+      corresponding schema updates.
     </p>
   </section>
 </section>
@@ -117,30 +249,78 @@
 <section>
   <h2 id="client">Client Processing Model</h2>
   <ol>
-    <li>On session start, generate a fresh seed <code>S</code> and derive an HMAC key. A session is the lifetime of a tab/window (see <a href="#session-semantics">§ Session semantics and edge cases</a>).</li>
-    <li><strong>Step discovery (hybrid control-plane):</strong> determine step metadata using one or more of:
+    <li>
+      On session start, generate a fresh seed <code>S</code> and derive an HMAC
+      key. A session is the lifetime of a tab/window (see
+      <a href="#session-semantics">§ Session semantics and edge cases</a>).
+    </li>
+    <li>
+      <strong>Step discovery (hybrid control-plane):</strong> determine step
+      metadata using one or more of:
       <ul>
-        <li>HTML meta tags (<code>ujht-step</code>, <code>ujht-journey</code>, <code>ujht-catalog</code>, <code>ujht-variant</code>),</li>
-        <li>server response headers (<code>UJHT-Step</code>, <code>UJHT-Journey</code>, <code>UJHT-Catalog</code>, <code>UJHT-Variant</code>),</li>
+        <li>
+          HTML meta tags (<code>ujht-step</code>, <code>ujht-journey</code>,
+          <code>ujht-catalog</code>, <code>ujht-variant</code>),
+        </li>
+        <li>
+          server response headers (<code>UJHT-Step</code>,
+          <code>UJHT-Journey</code>, <code>UJHT-Catalog</code>,
+          <code>UJHT-Variant</code>),
+        </li>
         <li>application configuration (e.g., route table constants).</li>
       </ul>
-      Clients <em class="rfc2119">MUST NOT</em> fetch the catalog; step keys are opaque tokens for the client.
+      Clients <em class="rfc2119">MUST NOT</em> fetch the catalog; step keys are
+      opaque tokens for the client.
     </li>
-    <li>For each step, construct and canonicalize <code>payload</code>, compute <code>curr</code>, transmit the event, and update <code>prev ← curr</code>.</li>
-    <li>Implementations <em class="rfc2119">MAY</em> store <code>prev</code> in <code>sessionStorage</code> to bridge navigations; they <em class="rfc2119">MUST NOT</em> write cookies, <code>localStorage</code>, IndexedDB, or other persistent state for UJHT.</li>
-    <li>Clients <em class="rfc2119">MUST</em> suppress all UJHT transmission when a Do Not Track signal is enabled (see <a href="#preferences">§ User Preference Signaling</a>).</li>
+    <li>
+      For each step, construct and canonicalize <code>payload</code>, compute
+      <code>curr</code>, transmit the event, and update
+      <code>prev ← curr</code>.
+    </li>
+    <li>
+      Implementations <em class="rfc2119">MAY</em> store <code>prev</code> in
+      <code>sessionStorage</code> to bridge navigations; they
+      <em class="rfc2119">MUST NOT</em> write cookies,
+      <code>localStorage</code>, IndexedDB, or other persistent state for UJHT.
+    </li>
+    <li>
+      Clients <em class="rfc2119">MUST</em> suppress all UJHT transmission when
+      a Do Not Track signal is enabled (see
+      <a href="#preferences">§ User Preference Signaling</a>).
+    </li>
   </ol>
-  <p class="note">Implementation note: Clients <em class="rfc2119">SHOULD</em> emit <code>event: "view"</code> on route changes (SPA) and significant page loads (MPA), and <code>event: "action:*"</code> for key user actions.</p>
+  <p class="note">
+    Implementation note: Clients <em class="rfc2119">SHOULD</em> emit
+    <code>event: "view"</code> on route changes (SPA) and significant page loads
+    (MPA), and <code>event: "action:*"</code> for key user actions.
+  </p>
 
   <section>
     <h3 id="session-semantics">Session semantics and edge cases</h3>
     <p>
-      Clients define a UJHT session as the lifetime of a single browsing context (for example, a tab or window). In practice, user agents and frameworks may perform back/forward cache restores, reloads, and process restarts that affect client state.
+      Clients define a UJHT session as the lifetime of a single browsing context
+      (for example, a tab or window). In practice, user agents and frameworks
+      may perform back/forward cache restores, reloads, and process restarts
+      that affect client state.
     </p>
     <ul>
-      <li>If <code>sessionStorage</code> is unavailable or a client cannot recover a valid <code>prev</code> value after navigation or restart, it <em class="rfc2119">MUST</em> start a new chain by setting <code>prev = ""</code> and computing a new root event.</li>
-      <li>If a page is restored from a back/forward cache with stale or inconsistent state, clients <em class="rfc2119">SHOULD</em> prefer starting a new chain rather than attempting to reuse an old <code>prev</code> that no longer reflects the actual journey.</li>
-      <li>Implementations <em class="rfc2119">MUST NOT</em> attempt to bridge chains across independent browsing contexts (for example, separate tabs or windows) by sharing seeds or <code>prev</code> values.</li>
+      <li>
+        If <code>sessionStorage</code> is unavailable or a client cannot recover
+        a valid <code>prev</code> value after navigation or restart, it
+        <em class="rfc2119">MUST</em> start a new chain by setting
+        <code>prev = ""</code> and computing a new root event.
+      </li>
+      <li>
+        If a page is restored from a back/forward cache with stale or
+        inconsistent state, clients <em class="rfc2119">SHOULD</em> prefer
+        starting a new chain rather than attempting to reuse an old
+        <code>prev</code> that no longer reflects the actual journey.
+      </li>
+      <li>
+        Implementations <em class="rfc2119">MUST NOT</em> attempt to bridge
+        chains across independent browsing contexts (for example, separate tabs
+        or windows) by sharing seeds or <code>prev</code> values.
+      </li>
     </ul>
   </section>
 </section>
@@ -151,56 +331,124 @@
   <section>
     <h3 id="tls-http">TLS and HTTP Versions</h3>
     <ul>
-      <li>All UJHT transmissions <em class="rfc2119">MUST</em> use TLS (HTTPS) with TLS 1.2 or newer. Clear-text HTTP <em class="rfc2119">MUST NOT</em> be used in production. For development, <code>http://localhost</code> is permitted.</li>
-      <li>HTTP/1.1, HTTP/2, and HTTP/3 are supported. Implementations <em class="rfc2119">SHOULD</em> prefer HTTP/2 or HTTP/3 where available.</li>
+      <li>
+        All UJHT transmissions <em class="rfc2119">MUST</em> use TLS (HTTPS)
+        with TLS 1.2 or newer. Clear-text HTTP
+        <em class="rfc2119">MUST NOT</em> be used in production. For
+        development, <code>http://localhost</code> is permitted.
+      </li>
+      <li>
+        HTTP/1.1, HTTP/2, and HTTP/3 are supported. Implementations
+        <em class="rfc2119">SHOULD</em> prefer HTTP/2 or HTTP/3 where available.
+      </li>
     </ul>
   </section>
 
   <section>
     <h3 id="http-interface">HTTP Interface</h3>
     <p>
-      Method: <code>POST</code> • Headers: <code>Content-Type: application/ujht+json</code> • Body: Event object (see <a href="#event-object">Event Object</a>). Servers <em class="rfc2119">MUST</em> treat <code>curr</code> as an idempotency key within a given collection endpoint. Responses: <code>204</code> on success; <code>400</code>, <code>413</code>, <code>429</code>, <code>5xx</code> as appropriate.
+      Method: <code>POST</code> • Headers:
+      <code>Content-Type: application/ujht+json</code> • Body: Event object (see
+      <a href="#event-object">Event Object</a>). Servers
+      <em class="rfc2119">MUST</em> treat <code>curr</code> as an idempotency
+      key within a given collection endpoint. Responses: <code>204</code> on
+      success; <code>400</code>, <code>413</code>, <code>429</code>,
+      <code>5xx</code> as appropriate.
     </p>
-    <div class="note"><p>For reliability on unload, clients <em class="rfc2119">SHOULD</em> use <code>navigator.sendBeacon()</code>. Fallbacks include asynchronous <code>fetch()</code> with <code>keepalive</code>.</p></div>
+    <div class="note">
+      <p>
+        For reliability on unload, clients <em class="rfc2119">SHOULD</em> use
+        <code>navigator.sendBeacon()</code>. Fallbacks include asynchronous
+        <code>fetch()</code> with <code>keepalive</code>.
+      </p>
+    </div>
   </section>
 
   <section>
     <h3 id="batching">Batching</h3>
-    <p>Clients <em class="rfc2119">MAY</em> send a batch envelope with media type <code>application/ujht-batch+json</code> containing an array of events, ordered or unordered. Servers <em class="rfc2119">MUST</em> accept out-of-order events and deduplicate by <code>curr</code>.</p>
-<pre class="code" aria-label="Batch envelope">{
+    <p>
+      Clients <em class="rfc2119">MAY</em> send a batch envelope with media type
+      <code>application/ujht-batch+json</code> containing an array of events,
+      ordered or unordered. Servers <em class="rfc2119">MUST</em> accept
+      out-of-order events and deduplicate by <code>curr</code>.
+    </p>
+    <pre class="code" aria-label="Batch envelope">
+{
   "v": 1,
   "events": [ { /* event */ }, { /* event */ } ]
-}</pre>
+}</pre
+    >
   </section>
 
   <section>
     <h3 id="streaming">Streaming</h3>
-    <p>Clients <em class="rfc2119">MAY</em> stream events using NDJSON over HTTP with <code>Content-Type: application/ujht-ndjson</code>. For HTTP/1.1, <code>Transfer-Encoding: chunked</code> <em class="rfc2119">MAY</em> be used; HTTP/2 and HTTP/3 provide native data framing. Each line <em class="rfc2119">MUST</em> contain a single event JSON object.</p>
+    <p>
+      Clients <em class="rfc2119">MAY</em> stream events using NDJSON over HTTP
+      with <code>Content-Type: application/ujht-ndjson</code>. For HTTP/1.1,
+      <code>Transfer-Encoding: chunked</code> <em class="rfc2119">MAY</em> be
+      used; HTTP/2 and HTTP/3 provide native data framing. Each line
+      <em class="rfc2119">MUST</em> contain a single event JSON object.
+    </p>
   </section>
 
   <section>
     <h3 id="hints">Optional Server Hints (Non-authoritative)</h3>
-    <p>Servers <em class="rfc2119">MAY</em> include response headers that provide non-authoritative hints to clients:</p>
+    <p>
+      Servers <em class="rfc2119">MAY</em> include response headers that provide
+      non-authoritative hints to clients:
+    </p>
     <ul>
-      <li><code>UJHT-Step</code>, <code>UJHT-Journey</code>, <code>UJHT-Catalog</code>, <code>UJHT-Variant</code> — suggest step metadata for the next client emission.</li>
-      <li><code>UJHT-Expected-Next</code> — a comma-separated list of likely next step keys for QA/observability.</li>
+      <li>
+        <code>UJHT-Step</code>, <code>UJHT-Journey</code>,
+        <code>UJHT-Catalog</code>, <code>UJHT-Variant</code> — suggest step
+        metadata for the next client emission.
+      </li>
+      <li>
+        <code>UJHT-Expected-Next</code> — a comma-separated list of likely next
+        step keys for QA/observability.
+      </li>
     </ul>
-    <p>Clients <em class="rfc2119">MUST NOT</em> rely on hints for hashing or identity; they are advisory only.</p>
+    <p>
+      Clients <em class="rfc2119">MUST NOT</em> rely on hints for hashing or
+      identity; they are advisory only.
+    </p>
   </section>
 
   <section>
     <h3 id="websocket">WebSocket Subprotocol</h3>
-    <p>Implementations <em class="rfc2119">MAY</em> use secure WebSockets (<code>wss://</code>) with a subprotocol token <code>ujht.v1</code>. Messages are UTF-8 JSON; both single events and batches are allowed. Clear-text <code>ws://</code> <em class="rfc2119">MUST NOT</em> be used in production. Clients <em class="rfc2119">MUST NOT</em> open a WebSocket when a Do Not Track or equivalent opt-out signal is enabled.</p>
+    <p>
+      Implementations <em class="rfc2119">MAY</em> use secure WebSockets
+      (<code>wss://</code>) with a subprotocol token <code>ujht.v1</code>.
+      Messages are UTF-8 JSON; both single events and batches are allowed.
+      Clear-text <code>ws://</code> <em class="rfc2119">MUST NOT</em> be used in
+      production. Clients <em class="rfc2119">MUST NOT</em> open a WebSocket
+      when a Do Not Track or equivalent opt-out signal is enabled.
+    </p>
   </section>
 </section>
 
 <section>
   <h2 id="preferences">User Preference Signaling</h2>
   <ul>
-    <li>Clients <em class="rfc2119">MUST</em> suppress UJHT when <code>navigator.doNotTrack === "1"</code> or the UA signals a comparable setting.</li>
-    <li>Clients <em class="rfc2119">MUST NOT</em> transmit an explicit "DNT notice" event solely to announce Do Not Track status.</li>
-    <li>Servers <em class="rfc2119">SHOULD</em> also respect the HTTP <code>DNT: 1</code> header to disable any server-side analytics logic associated with UJHT.</li>
-    <li>Deployments <em class="rfc2119">SHOULD</em> honor additional user preference and privacy signals exposed by the user agent or applicable regulation when they are clearly equivalent to an opt-out of tracking.</li>
+    <li>
+      Clients <em class="rfc2119">MUST</em> suppress UJHT when
+      <code>navigator.doNotTrack === "1"</code> or the UA signals a comparable
+      setting.
+    </li>
+    <li>
+      Clients <em class="rfc2119">MUST NOT</em> transmit an explicit "DNT
+      notice" event solely to announce Do Not Track status.
+    </li>
+    <li>
+      Servers <em class="rfc2119">SHOULD</em> also respect the HTTP
+      <code>DNT: 1</code> header to disable any server-side analytics logic
+      associated with UJHT.
+    </li>
+    <li>
+      Deployments <em class="rfc2119">SHOULD</em> honor additional user
+      preference and privacy signals exposed by the user agent or applicable
+      regulation when they are clearly equivalent to an opt-out of tracking.
+    </li>
   </ul>
 </section>
 
@@ -210,26 +458,69 @@
   <section>
     <h3 id="validation">Validation</h3>
     <ul>
-      <li>Servers <em class="rfc2119">MUST</em> validate version, types, and formats; <em class="rfc2119">SHOULD</em> detect and mitigate payloads containing obvious PII patterns (for example, email addresses, telephone numbers, or account identifiers) by rejecting the event (e.g., with <code>400</code>) or sanitizing offending fields and annotating them; and <em class="rfc2119">MUST</em> index <code>prev</code> for stitching.</li>
-      <li>Servers <em class="rfc2119">MUST NOT</em> derive or require access to the session seed, or mint surrogate hashes intended to replace <code>curr</code>/<code>prev</code>. The construction of the hash chain is a client responsibility.</li>
-      <li>Servers <em class="rfc2119">MAY</em> normalize <code>payload.ref</code> to origin-only when misconfigured clients send full URLs.</li>
+      <li>
+        Servers <em class="rfc2119">MUST</em> validate version, types, and
+        formats; <em class="rfc2119">SHOULD</em> detect and mitigate payloads
+        containing obvious PII patterns (for example, email addresses, telephone
+        numbers, or account identifiers) by rejecting the event (e.g., with
+        <code>400</code>) or sanitizing offending fields and annotating them;
+        and <em class="rfc2119">MUST</em> index <code>prev</code> for stitching.
+      </li>
+      <li>
+        Servers <em class="rfc2119">MUST NOT</em> derive or require access to
+        the session seed, or mint surrogate hashes intended to replace
+        <code>curr</code>/<code>prev</code>. The construction of the hash chain
+        is a client responsibility.
+      </li>
+      <li>
+        Servers <em class="rfc2119">MAY</em> normalize
+        <code>payload.ref</code> to origin-only when misconfigured clients send
+        full URLs.
+      </li>
     </ul>
   </section>
 
   <section>
     <h3 id="storage-streaming">Storage vs. Streaming</h3>
     <ul>
-      <li>Servers <em class="rfc2119">MAY</em> store raw events as edges (<code>curr</code>, <code>prev</code>, <code>path</code>, <code>event</code>, <code>ts</code>, <code>ref</code>, <code>received_at</code>).</li>
-      <li>Servers <em class="rfc2119">MAY</em> stream events to downstream processors (for example, OTLP/HTTP, Kafka). Controllers <em class="rfc2119">MUST</em> ensure downstream processors adhere to <a href="#privacy">§ Privacy Requirements</a> and do not perform cross-session or cross-site re-identification using UJHT data.</li>
-      <li>When streaming without storage, servers <em class="rfc2119">SHOULD</em> implement back-pressure and transient buffering to avoid data loss.</li>
+      <li>
+        Servers <em class="rfc2119">MAY</em> store raw events as edges
+        (<code>curr</code>, <code>prev</code>, <code>path</code>,
+        <code>event</code>, <code>ts</code>, <code>ref</code>,
+        <code>received_at</code>).
+      </li>
+      <li>
+        Servers <em class="rfc2119">MAY</em> stream events to downstream
+        processors (for example, OTLP/HTTP, Kafka). Controllers
+        <em class="rfc2119">MUST</em> ensure downstream processors adhere to
+        <a href="#privacy">§ Privacy Requirements</a> and do not perform
+        cross-session or cross-site re-identification using UJHT data.
+      </li>
+      <li>
+        When streaming without storage, servers
+        <em class="rfc2119">SHOULD</em> implement back-pressure and transient
+        buffering to avoid data loss.
+      </li>
     </ul>
   </section>
 
   <section>
     <h3 id="stitching">Stitching</h3>
-    <p>To reconstruct a journey, start from any event with <code>prev = ""</code> and follow successive events where <code>prev</code> equals the predecessor’s <code>curr</code>, ordered by <code>ts</code> (tie-break by <code>received_at</code>). Servers <em class="rfc2119">MUST</em> tolerate out-of-order arrival and ignore duplicates by <code>curr</code>.</p>
     <p>
-      If a predecessor event is missing (that is, there is no event whose <code>curr</code> matches a given <code>prev</code>), servers <em class="rfc2119">MUST</em> treat the first seen event as the start of a new reconstructable chain for analytics purposes and <em class="rfc2119">MAY</em> annotate such events with an anomaly token (for example, <code>missing_predecessor</code>).
+      To reconstruct a journey, start from any event with
+      <code>prev = ""</code> and follow successive events where
+      <code>prev</code> equals the predecessor’s <code>curr</code>, ordered by
+      <code>ts</code> (tie-break by <code>received_at</code>). Servers
+      <em class="rfc2119">MUST</em> tolerate out-of-order arrival and ignore
+      duplicates by <code>curr</code>.
+    </p>
+    <p>
+      If a predecessor event is missing (that is, there is no event whose
+      <code>curr</code> matches a given <code>prev</code>), servers
+      <em class="rfc2119">MUST</em> treat the first seen event as the start of a
+      new reconstructable chain for analytics purposes and
+      <em class="rfc2119">MAY</em> annotate such events with an anomaly token
+      (for example, <code>missing_predecessor</code>).
     </p>
   </section>
 
@@ -237,21 +528,44 @@
     <h3 id="anomalies">Catalog Validation &amp; Anomalies</h3>
     <p>When a Journey Catalog is enabled and <code>x-step</code> is present:</p>
     <ul>
-      <li>Servers <em class="rfc2119">MUST</em> verify that <code>x-step</code> exists in the active catalog version.</li>
-      <li>For non-root events, servers <em class="rfc2119">SHOULD</em> verify that the transition from the predecessor’s <code>x-step</code> to the current <code>x-step</code> is allowed by the catalog. If the predecessor <code>x-step</code> is unknown or missing, validation <em class="rfc2119">MAY</em> be skipped for that edge.</li>
-      <li>Servers <em class="rfc2119">MUST NOT</em> drop events solely due to catalog mismatches; instead they <em class="rfc2119">SHOULD</em> annotate with an anomaly flag and proceed.</li>
+      <li>
+        Servers <em class="rfc2119">MUST</em> verify that
+        <code>x-step</code> exists in the active catalog version.
+      </li>
+      <li>
+        For non-root events, servers <em class="rfc2119">SHOULD</em> verify that
+        the transition from the predecessor’s <code>x-step</code> to the current
+        <code>x-step</code> is allowed by the catalog. If the predecessor
+        <code>x-step</code> is unknown or missing, validation
+        <em class="rfc2119">MAY</em> be skipped for that edge.
+      </li>
+      <li>
+        Servers <em class="rfc2119">MUST NOT</em> drop events solely due to
+        catalog mismatches; instead they
+        <em class="rfc2119">SHOULD</em> annotate with an anomaly flag and
+        proceed.
+      </li>
     </ul>
-    <p>Recommended anomaly tokens (attached as an implementation-defined note, for example, <code>x-anomaly</code>): <code>catalog_unknown_step</code>, <code>invalid_transition</code>, <code>catalog_version_mismatch</code>, <code>missing_predecessor</code>.</p>
+    <p>
+      Recommended anomaly tokens (attached as an implementation-defined note,
+      for example, <code>x-anomaly</code>): <code>catalog_unknown_step</code>,
+      <code>invalid_transition</code>, <code>catalog_version_mismatch</code>,
+      <code>missing_predecessor</code>.
+    </p>
   </section>
 </section>
 
 <section>
   <h2 id="catalog">Journey Catalog (Control Plane)</h2>
-  <p>The Journey Catalog defines the semantic model of a journey independent of client hashing.</p>
+  <p>
+    The Journey Catalog defines the semantic model of a journey independent of
+    client hashing.
+  </p>
 
   <section>
     <h3 id="catalog-structure">Structure</h3>
-<pre class="code" aria-label="Catalog shape">{
+    <pre class="code" aria-label="Catalog shape">
+{
   "version": "2025-08-04T12:00Z",
   "steps": {
     "onboarding.enter_email@v3": {
@@ -266,16 +580,34 @@
       "name": "Welcome"
     }
   }
-}</pre>
+}</pre
+    >
   </section>
 
   <section>
     <h3 id="catalog-requirements">Requirements</h3>
     <ul>
-      <li>Controllers <em class="rfc2119">MUST</em> maintain a version identifier and <em class="rfc2119">SHOULD</em> publish signed snapshots via CI.</li>
-      <li>Servers <em class="rfc2119">MAY</em> load the catalog from code, config, or a service. Clients <em class="rfc2119">MUST NOT</em> fetch or rely on the catalog directly.</li>
-      <li>If catalog validation is enforced, clients <em class="rfc2119">MUST</em> include <code>x-step</code> and <em class="rfc2119">SHOULD</em> include <code>x-catalog</code>.</li>
-      <li>Step keys, journey names, catalog versions, and related control-plane identifiers <em class="rfc2119">MUST NOT</em> embed application-specific user identifiers, hashed or encrypted PII, or per-user unique tokens. They <em class="rfc2119">SHOULD</em> be low-cardinality tokens defined at design or release time, not per user.</li>
+      <li>
+        Controllers <em class="rfc2119">MUST</em> maintain a version identifier
+        and <em class="rfc2119">SHOULD</em> publish signed snapshots via CI.
+      </li>
+      <li>
+        Servers <em class="rfc2119">MAY</em> load the catalog from code, config,
+        or a service. Clients <em class="rfc2119">MUST NOT</em> fetch or rely on
+        the catalog directly.
+      </li>
+      <li>
+        If catalog validation is enforced, clients
+        <em class="rfc2119">MUST</em> include <code>x-step</code> and
+        <em class="rfc2119">SHOULD</em> include <code>x-catalog</code>.
+      </li>
+      <li>
+        Step keys, journey names, catalog versions, and related control-plane
+        identifiers <em class="rfc2119">MUST NOT</em> embed application-specific
+        user identifiers, hashed or encrypted PII, or per-user unique tokens.
+        They <em class="rfc2119">SHOULD</em> be low-cardinality tokens defined
+        at design or release time, not per user.
+      </li>
     </ul>
   </section>
 </section>
@@ -288,7 +620,9 @@
     <ul>
       <li><code>application/ujht+json</code> — single event.</li>
       <li><code>application/ujht-batch+json</code> — batch envelope.</li>
-      <li><code>application/ujht-ndjson</code> — line-delimited stream of events.</li>
+      <li>
+        <code>application/ujht-ndjson</code> — line-delimited stream of events.
+      </li>
     </ul>
   </section>
 
@@ -296,15 +630,44 @@
     <h3 id="otel-mapping">OpenTelemetry (OTel) Mapping (Informative)</h3>
     <p>UJHT events can be mapped to OTel spans for path analysis:</p>
     <ul>
-      <li><strong>trace_id</strong> — derived from the root event’s <code>curr</code>: first 16 bytes (32 hex chars).</li>
-      <li><strong>span_id</strong> — first 8 bytes (16 hex chars) of <code>curr</code>.</li>
-      <li><strong>parent_span_id</strong> — first 8 bytes of <code>prev</code> (empty for root).</li>
-      <li><strong>name</strong> — <code>payload.event</code> or <code>payload.path</code>.</li>
-      <li><strong>start/end time</strong> — from <code>ts</code> and optional dwell (<code>x-dwellMs</code>).</li>
-      <li><strong>attributes</strong> — <code>ujht.path</code>, <code>ujht.ref</code>, and any <code>x-*</code> keys (for example, <code>ujht.x-step</code>, <code>ujht.x-journey</code>, <code>ujht.x-catalog</code>, <code>ujht.x-variant</code>).</li>
+      <li>
+        <strong>trace_id</strong> — derived from the root event’s
+        <code>curr</code>: first 16 bytes (32 hex chars).
+      </li>
+      <li>
+        <strong>span_id</strong> — first 8 bytes (16 hex chars) of
+        <code>curr</code>.
+      </li>
+      <li>
+        <strong>parent_span_id</strong> — first 8 bytes of
+        <code>prev</code> (empty for root).
+      </li>
+      <li>
+        <strong>name</strong> — <code>payload.event</code> or
+        <code>payload.path</code>.
+      </li>
+      <li>
+        <strong>start/end time</strong> — from <code>ts</code> and optional
+        dwell (<code>x-dwellMs</code>).
+      </li>
+      <li>
+        <strong>attributes</strong> — <code>ujht.path</code>,
+        <code>ujht.ref</code>, and any <code>x-*</code> keys (for example,
+        <code>ujht.x-step</code>, <code>ujht.x-journey</code>,
+        <code>ujht.x-catalog</code>, <code>ujht.x-variant</code>).
+      </li>
     </ul>
-    <p>All spans belonging to a single reconstructed journey <em class="rfc2119">MUST</em> reuse the same <code>trace_id</code> derived from that journey’s root event.</p>
-    <p>When exporting to OTLP, controllers <em class="rfc2119">MUST</em> ensure the truncation does not create cross-session linkability beyond the session chain and <em class="rfc2119">MUST NOT</em> enrich UJHT-derived traces with stable user identifiers or identifiers derived from PII.</p>
+    <p>
+      All spans belonging to a single reconstructed journey
+      <em class="rfc2119">MUST</em> reuse the same <code>trace_id</code> derived
+      from that journey’s root event.
+    </p>
+    <p>
+      When exporting to OTLP, controllers <em class="rfc2119">MUST</em> ensure
+      the truncation does not create cross-session linkability beyond the
+      session chain and <em class="rfc2119">MUST NOT</em> enrich UJHT-derived
+      traces with stable user identifiers or identifiers derived from PII.
+    </p>
   </section>
 </section>
 
@@ -314,39 +677,92 @@
     <li>
       <strong>No persistent identifiers and no fingerprinting.</strong>
       <ul>
-        <li>Clients <em class="rfc2119">MUST NOT</em> use cookies, <code>localStorage</code>, IndexedDB, or other persistent state to store UJHT seeds, hashes, or identifiers. Session bridging <em class="rfc2119">MAY</em> use <code>sessionStorage</code>.</li>
-        <li>Controllers and processors <em class="rfc2119">MUST NOT</em> use UJHT events, alone or in combination with other signals, to construct cross-session or cross-site device fingerprints or stable user identifiers.</li>
+        <li>
+          Clients <em class="rfc2119">MUST NOT</em> use cookies,
+          <code>localStorage</code>, IndexedDB, or other persistent state to
+          store UJHT seeds, hashes, or identifiers. Session bridging
+          <em class="rfc2119">MAY</em> use <code>sessionStorage</code>.
+        </li>
+        <li>
+          Controllers and processors <em class="rfc2119">MUST NOT</em> use UJHT
+          events, alone or in combination with other signals, to construct
+          cross-session or cross-site device fingerprints or stable user
+          identifiers.
+        </li>
       </ul>
     </li>
     <li>
       <strong>Seed confidentiality.</strong>
       <ul>
-        <li>The session seed <code>S</code> <em class="rfc2119">MUST</em> remain client-confidential. Servers <em class="rfc2119">MUST NOT</em> derive, request, or compute event hashes on behalf of the client.</li>
-        <li>Seeds <em class="rfc2119">MUST</em> be fresh per session and <em class="rfc2119">MUST NOT</em> be reused across independent sessions or sites.</li>
+        <li>
+          The session seed <code>S</code> <em class="rfc2119">MUST</em> remain
+          client-confidential. Servers <em class="rfc2119">MUST NOT</em> derive,
+          request, or compute event hashes on behalf of the client.
+        </li>
+        <li>
+          Seeds <em class="rfc2119">MUST</em> be fresh per session and
+          <em class="rfc2119">MUST NOT</em> be reused across independent
+          sessions or sites.
+        </li>
       </ul>
     </li>
     <li>
       <strong>Data minimization.</strong>
       <ul>
-        <li><code>ts</code> values <em class="rfc2119">SHOULD</em> be rounded to a coarser granularity (for example, whole seconds or tens of seconds) appropriate to the analytics use case.</li>
-        <li><code>ref</code> <em class="rfc2119">MUST</em> be origin-only or empty (no path, query, or fragment).</li>
-        <li><code>path</code> <em class="rfc2119">MUST NOT</em> encode PII or application-specific account identifiers.</li>
-        <li>Values of <code>x-*</code> <em class="rfc2119">MUST NOT</em> contain PII, hashed or encrypted PII, or globally unique identifiers, and <em class="rfc2119">SHOULD</em> be short, low-cardinality tokens.</li>
+        <li>
+          <code>ts</code> values <em class="rfc2119">SHOULD</em> be rounded to a
+          coarser granularity (for example, whole seconds or tens of seconds)
+          appropriate to the analytics use case.
+        </li>
+        <li>
+          <code>ref</code> <em class="rfc2119">MUST</em> be origin-only or empty
+          (no path, query, or fragment).
+        </li>
+        <li>
+          <code>path</code> <em class="rfc2119">MUST NOT</em> encode PII or
+          application-specific account identifiers.
+        </li>
+        <li>
+          Values of <code>x-*</code> <em class="rfc2119">MUST NOT</em> contain
+          PII, hashed or encrypted PII, or globally unique identifiers, and
+          <em class="rfc2119">SHOULD</em> be short, low-cardinality tokens.
+        </li>
       </ul>
     </li>
     <li>
       <strong>Transparency and control.</strong>
       <ul>
-        <li>Deployments <em class="rfc2119">MUST</em> disclose UJHT usage in an appropriate privacy notice and <em class="rfc2119">SHOULD</em> honor opt-out mechanisms, including Do Not Track and equivalent user preference signals.</li>
-        <li>This specification does not determine the legal classification of UJHT data; controllers are responsible for ensuring that deployments comply with applicable data protection and privacy laws.</li>
+        <li>
+          Deployments <em class="rfc2119">MUST</em> disclose UJHT usage in an
+          appropriate privacy notice and <em class="rfc2119">SHOULD</em> honor
+          opt-out mechanisms, including Do Not Track and equivalent user
+          preference signals.
+        </li>
+        <li>
+          This specification does not determine the legal classification of UJHT
+          data; controllers are responsible for ensuring that deployments comply
+          with applicable data protection and privacy laws.
+        </li>
       </ul>
     </li>
     <li>
       <strong>Retention &amp; purpose limitation.</strong>
       <ul>
-        <li>Servers <em class="rfc2119">SHOULD</em> define short retention periods for raw edges and favor aggregates.</li>
-        <li>UJHT data <em class="rfc2119">MUST</em> be used solely for privacy-preserving journey analytics and UX improvement.</li>
-        <li>Controllers and processors <em class="rfc2119">MUST NOT</em> repurpose UJHT events for authentication, advertising profiles, or cross-session tracking by joining them with stable identifiers (for example, account IDs, email addresses, or loyalty IDs) except in forms that are demonstrably aggregated and non-identifying.</li>
+        <li>
+          Servers <em class="rfc2119">SHOULD</em> define short retention periods
+          for raw edges and favor aggregates.
+        </li>
+        <li>
+          UJHT data <em class="rfc2119">MUST</em> be used solely for
+          privacy-preserving journey analytics and UX improvement.
+        </li>
+        <li>
+          Controllers and processors <em class="rfc2119">MUST NOT</em> repurpose
+          UJHT events for authentication, advertising profiles, or cross-session
+          tracking by joining them with stable identifiers (for example, account
+          IDs, email addresses, or loyalty IDs) except in forms that are
+          demonstrably aggregated and non-identifying.
+        </li>
       </ul>
     </li>
   </ol>
@@ -355,18 +771,45 @@
 <section>
   <h2 id="security">Security Considerations</h2>
   <ul>
-    <li><strong>Collision resistance.</strong> HMAC-SHA-256 provides strong second-preimage resistance; chain rewrites are infeasible without the seed.</li>
-    <li><strong>Integrity and trust.</strong> Servers cannot verify client honesty; UJHT is observational. Implementations should implement anomaly detection and rate limiting.</li>
-    <li><strong>Replay.</strong> Treat <code>curr</code> as unique; ignore duplicates.</li>
-    <li><strong>Transport.</strong> Use HTTPS/WSS; enforce modern TLS; set CSP to reduce script injection risk.</li>
-    <li><strong>Control plane separation.</strong> The Journey Catalog defines semantics but <em class="rfc2119">MUST NOT</em> introduce identifiers that enable cross-session re-identification. Step keys, journey names, and related metadata <em class="rfc2119">MUST NOT</em> embed account IDs, email addresses, telephone numbers, or other direct identifiers, nor hashed or encrypted forms of such identifiers intended to be stable per user.</li>
+    <li>
+      <strong>Collision resistance.</strong> HMAC-SHA-256 provides strong
+      second-preimage resistance; chain rewrites are infeasible without the
+      seed.
+    </li>
+    <li>
+      <strong>Integrity and trust.</strong> Servers cannot verify client
+      honesty; UJHT is observational. Implementations should implement anomaly
+      detection and rate limiting.
+    </li>
+    <li>
+      <strong>Replay.</strong> Treat <code>curr</code> as unique; ignore
+      duplicates.
+    </li>
+    <li>
+      <strong>Transport.</strong> Use HTTPS/WSS; enforce modern TLS; set CSP to
+      reduce script injection risk.
+    </li>
+    <li>
+      <strong>Control plane separation.</strong> The Journey Catalog defines
+      semantics but <em class="rfc2119">MUST NOT</em> introduce identifiers that
+      enable cross-session re-identification. Step keys, journey names, and
+      related metadata <em class="rfc2119">MUST NOT</em> embed account IDs,
+      email addresses, telephone numbers, or other direct identifiers, nor
+      hashed or encrypted forms of such identifiers intended to be stable per
+      user.
+    </li>
   </ul>
 </section>
 
 <section class="appendix">
   <h2 id="json-schema">JSON Schema (Informative)</h2>
-  <p>The wire format is unchanged. The schema below remains valid for <code>v = 1</code>; deployments may additionally lint <code>x-*</code> fields to token patterns and max lengths.</p>
-<pre class="code" aria-label="JSON Schema">{
+  <p>
+    The wire format is unchanged. The schema below remains valid for
+    <code>v = 1</code>; deployments may additionally lint
+    <code>x-*</code> fields to token patterns and max lengths.
+  </p>
+  <pre class="code" aria-label="JSON Schema">
+{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.org/schemas/ujht-event.json",
   "title": "UJHT Event v1",
@@ -389,6 +832,10 @@
     }
   },
   "additionalProperties": false
-}</pre>
-  <p class="note">Recommended lint (non-normative): keys starting with <code>x-</code> have values of type string, ≤256 chars, matching <code>^[A-Za-z0-9._:-]+$</code>.</p>
+}</pre
+  >
+  <p class="note">
+    Recommended lint (non-normative): keys starting with <code>x-</code> have
+    values of type string, ≤256 chars, matching <code>^[A-Za-z0-9._:-]+$</code>.
+  </p>
 </section>

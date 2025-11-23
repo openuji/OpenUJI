@@ -1,27 +1,26 @@
 {
-    "title": "User Journey Mapping",
-    "shortName": "ujm",
+  "title": "User Journey Mapping",
+  "shortName": "ujm",
 
-    "specStatus": "unofficial",
+  "specStatus": "unofficial",
 
-    "edDraftURI": "https://example.org/ujm/",
+  "edDraftURI": "https://example.org/ujm/",
 
-    "github": "https://github.com/your-org/ujm-spec",  
-    
-    "editors": [
-      {
-        "name": "Your Name",
-        "company": "Your Organization"
-        }
-    ],
+  "github": "https://github.com/your-org/ujm-spec",
 
-    "wg": "openuji",
-    "wgURI": "https://www.w3.org/YourWG/",
-    "wgPublicList": "public-yourwg",
-    "wgPatentURI": "https://www.w3.org/2004/01/pp-impl/XXXX/status",
-    
+  "editors": [
+    {
+      "name": "Your Name",
+      "company": "Your Organization"
+    }
+  ],
 
-    "maxTocLevel": 3,
-    "lint": { "informative-dfn": true },
-    "formerEditors": []
-  }
+  "wg": "openuji",
+  "wgURI": "https://www.w3.org/YourWG/",
+  "wgPublicList": "public-yourwg",
+  "wgPatentURI": "https://www.w3.org/2004/01/pp-impl/XXXX/status",
+
+  "maxTocLevel": 3,
+  "lint": { "informative-dfn": true },
+  "formerEditors": []
+}
