@@ -2,10 +2,10 @@
   <p>
     This specification defines an abstract, platform-agnostic model for a
     programmable, one-dimensional scroll engine. It describes scroll domains,
-    observable state, and a architecture in which host or application
-    code can participate in scroll decisions via programmable hooks,
-    extension points, and explicit <a href="#term-scroll-authority">scroll
-    authority</a> configuration.
+    observable state, and a architecture in which host or application code can
+    participate in scroll decisions via programmable hooks, extension points,
+    and explicit
+    <a href="#term-scroll-authority">scroll authority</a> configuration.
   </p>
   <p>
     The model distinguishes between user-originated and programmatic scrolling,
@@ -72,8 +72,8 @@
       </li>
       <li>
         Support explicit configuration of which component is responsible for
-        applying scroll motion to the scroll surface for
-        user-originated and programmatic actions, via
+        applying scroll motion to the scroll surface for user-originated and
+        programmatic actions, via
         <a href="#term-scroll-authority">scroll authority</a>.
       </li>
       <li>
@@ -137,8 +137,8 @@
       <li>
         The definition of concrete mechanisms by which host environments apply
         scroll updates to scroll surfaces (for example, specific methods or
-        properties). This specification only constrains observable behavior
-        and <a href="#term-scroll-authority">authority</a> semantics.
+        properties). This specification only constrains observable behavior and
+        <a href="#term-scroll-authority">authority</a> semantics.
       </li>
     </ul>
   </section>
@@ -196,8 +196,10 @@
         Respect the configured
         <a href="#term-user-scroll-authority">user scroll authority</a> and
         <a href="#term-programmatic-scroll-authority"
-          >programmatic scroll authority</a> as defined in
-        <a href="#term-scroll-authority">Scroll Authority</a>, including:
+          >programmatic scroll authority</a
+        >
+        as defined in <a href="#term-scroll-authority">Scroll Authority</a>,
+        including:
         <ul>
           <li>
             not applying user-originated impulses directly to the scroll surface
@@ -261,11 +263,14 @@
         operations for the scroll engine.
       </li>
       <li>
-        Configure <a href="#term-user-scroll-authority">user scroll authority</a>
-        and <a href="#term-programmatic-scroll-authority"
-          >programmatic scroll authority</a> for each scroll surface and/or
-        scroll axis, and ensure that the engine and host consistently apply
-        scroll motion in accordance with that configuration.
+        Configure
+        <a href="#term-user-scroll-authority">user scroll authority</a> and
+        <a href="#term-programmatic-scroll-authority"
+          >programmatic scroll authority</a
+        >
+        for each scroll surface and/or scroll axis, and ensure that the engine
+        and host consistently apply scroll motion in accordance with that
+        configuration.
       </li>
       <li>
         Ensure that, regardless of scroll authority configuration, the scroll
@@ -400,7 +405,8 @@
         Implementation.
       </li>
       <li>
-        A <dfn id="term-programmatic-scroll-authority"
+        A
+        <dfn id="term-programmatic-scroll-authority"
           >programmatic scroll authority</dfn
         >, which determines whether programmatic
         <a href="#term-scroll-operation">scroll operations</a> are applied to
@@ -435,201 +441,212 @@
       mechanisms.
     </p>
   </section>
-<section id="scroll-authority-profiles">
-  <h3 id="scroll-authority-profiles-heading">Scroll Authority Profiles</h3>
-  <p>
-    This section defines four common <dfn>scroll authority profiles</dfn> in
-    terms of <a href="#term-user-scroll-authority">user scroll authority</a> and
-    <a href="#term-programmatic-scroll-authority"
-      >programmatic scroll authority</a
-    >. Host Environments <em class="rfc2119">MAY</em> expose additional or more
-    granular configurations, but any such configuration
-    <em class="rfc2119">MUST</em> be reducible to these concepts.
-  </p>
-
-  <section id="profile-engine-engine">
-    <h4 id="profile-engine-engine-heading">
-      Engine-controlled profile (engine/engine)
-    </h4>
+  <section id="scroll-authority-profiles">
+    <h3 id="scroll-authority-profiles-heading">Scroll Authority Profiles</h3>
     <p>
-      In the <dfn>engine-controlled profile</dfn>, the Scroll Engine
-      Implementation is both the
-      <a href="#term-user-scroll-authority">user scroll authority</a> and the
+      This section defines four common <dfn>scroll authority profiles</dfn> in
+      terms of
+      <a href="#term-user-scroll-authority">user scroll authority</a> and
       <a href="#term-programmatic-scroll-authority"
         >programmatic scroll authority</a
-      >.
+      >. Host Environments <em class="rfc2119">MAY</em> expose additional or
+      more granular configurations, but any such configuration
+      <em class="rfc2119">MUST</em> be reducible to these concepts.
     </p>
-    <ul>
-      <li>
-        User-originated input is translated into
-        <a href="#term-impulse">impulses</a> and delivered to the scroll engine,
-        which applies them according to the active
-        <a href="#scroll-domain">scroll domain</a> and
-        <a href="#term-motion-policy">motion policy</a>.
-      </li>
-      <li>
-        Programmatic <a href="#term-scroll-operation">scroll operations</a> are
-        also processed by the scroll engine, which computes and applies motion
-        to the scroll surface.
-      </li>
-      <li>
-        The scroll engine is responsible for writing resulting positions to the
-        scroll surface using host-defined mechanisms.
-      </li>
-      <li>
-        This profile <em class="rfc2119">MAY</em> support all domain kinds
-        defined in <a href="#data-domains">Scroll Domains</a>, including
-        circular domains whose behavior would not be expressible when only the
-        Host Environment controls motion.
-      </li>
-    </ul>
-  </section>
 
-  <section id="profile-host-engine">
-    <h4 id="profile-host-engine-heading">
-      Host-user / engine-program profile (host/engine)
-    </h4>
-    <p>
-      In the <dfn>host-user / engine-program profile</dfn>, the Host Environment
-      is the <a href="#term-user-scroll-authority">user scroll authority</a>,
-      and the Scroll Engine Implementation is the
-      <a href="#term-programmatic-scroll-authority"
-        >programmatic scroll authority</a
-      >.
-    </p>
-    <ul>
-      <li>
-        User-originated input is applied directly to the scroll surface by the
-        Host Environment using host-specific mechanisms (for example, native
-        scrolling behavior). The resulting positions and origins
-        <em class="rfc2119">MUST</em> be reported back to the scroll engine as
-        canonical positions with origin <code>"user"</code> or
-        <code>"momentum"</code>.
-      </li>
-      <li>
-        Programmatic <a href="#term-scroll-operation">scroll operations</a> are
-        processed by the scroll engine, which computes motion over time
-        according to its <a href="#term-motion-policy">motion policy</a> and
-        writes resulting positions to the scroll surface.
-      </li>
-      <li>
-        When user-originated input occurs while programmatic motion is ongoing,
-        user input <em class="rfc2119">MUST</em> take precedence as described in
-        <a href="#a11y-user-override">User Override and Priority of User
-        Input</a>. Implementations <em class="rfc2119">SHOULD</em> cancel or
-        adjust engine-driven motion in response to such input.
-      </li>
-      <li>
-        Certain domain behaviors (for example, circular domains that require
-        logical wrapping of the scroll surface) <em class="rfc2119">MAY</em> be
-        limited or host-specific in this profile, since user-originated motion
-        is applied directly by the Host Environment.
-      </li>
-    </ul>
-  </section>
+    <section id="profile-engine-engine">
+      <h4 id="profile-engine-engine-heading">
+        Engine-controlled profile (engine/engine)
+      </h4>
+      <p>
+        In the <dfn>engine-controlled profile</dfn>, the Scroll Engine
+        Implementation is both the
+        <a href="#term-user-scroll-authority">user scroll authority</a> and the
+        <a href="#term-programmatic-scroll-authority"
+          >programmatic scroll authority</a
+        >.
+      </p>
+      <ul>
+        <li>
+          User-originated input is translated into
+          <a href="#term-impulse">impulses</a> and delivered to the scroll
+          engine, which applies them according to the active
+          <a href="#scroll-domain">scroll domain</a> and
+          <a href="#term-motion-policy">motion policy</a>.
+        </li>
+        <li>
+          Programmatic
+          <a href="#term-scroll-operation">scroll operations</a> are also
+          processed by the scroll engine, which computes and applies motion to
+          the scroll surface.
+        </li>
+        <li>
+          The scroll engine is responsible for writing resulting positions to
+          the scroll surface using host-defined mechanisms.
+        </li>
+        <li>
+          This profile <em class="rfc2119">MAY</em> support all domain kinds
+          defined in <a href="#data-domains">Scroll Domains</a>, including
+          circular domains whose behavior would not be expressible when only the
+          Host Environment controls motion.
+        </li>
+      </ul>
+    </section>
 
-  <section id="profile-engine-host">
-    <h4 id="profile-engine-host-heading">
-      Engine-user / host-program profile (engine/host)
-    </h4>
-    <p>
-      In the <dfn>engine-user / host-program profile</dfn>, the Scroll Engine
-      Implementation is the
-      <a href="#term-user-scroll-authority">user scroll authority</a>, and the
-      Host Environment is the
-      <a href="#term-programmatic-scroll-authority"
-        >programmatic scroll authority</a
-      >.
-    </p>
-    <ul>
-      <li>
-        User-originated input is translated into
-        <a href="#term-impulse">impulses</a> and delivered to the scroll engine,
-        which computes and applies resulting motion to the scroll surface.
-      </li>
-      <li>
-        Programmatic <a href="#term-scroll-operation">scroll operations</a> are
-        fulfilled by the Host Environment using host-specific mechanisms (for
-        example, native smooth scrolling or discrete jumps). The Host
-        Environment <em class="rfc2119">MUST</em> report resulting canonical
-        positions and origins (typically <code>"program"</code>) back to the
-        scroll engine.
-      </li>
-      <li>
-        The scroll engine <em class="rfc2119">MUST</em> treat host-applied
-        programmatic motion as observable state and <em class="rfc2119">MUST
-        NOT</em> assume that it can override or replace that motion unless
-        explicitly configured to do so by the Host Environment.
-      </li>
-      <li>
-        This profile is suitable when user input must be handled in a
-        highly-custom way by the engine, while programmatic scroll integrates
-        closely with host-native behaviors.
-      </li>
-    </ul>
-  </section>
+    <section id="profile-host-engine">
+      <h4 id="profile-host-engine-heading">
+        Host-user / engine-program profile (host/engine)
+      </h4>
+      <p>
+        In the <dfn>host-user / engine-program profile</dfn>, the Host
+        Environment is the
+        <a href="#term-user-scroll-authority">user scroll authority</a>, and the
+        Scroll Engine Implementation is the
+        <a href="#term-programmatic-scroll-authority"
+          >programmatic scroll authority</a
+        >.
+      </p>
+      <ul>
+        <li>
+          User-originated input is applied directly to the scroll surface by the
+          Host Environment using host-specific mechanisms (for example, native
+          scrolling behavior). The resulting positions and origins
+          <em class="rfc2119">MUST</em> be reported back to the scroll engine as
+          canonical positions with origin <code>"user"</code> or
+          <code>"momentum"</code>.
+        </li>
+        <li>
+          Programmatic
+          <a href="#term-scroll-operation">scroll operations</a> are processed
+          by the scroll engine, which computes motion over time according to its
+          <a href="#term-motion-policy">motion policy</a> and writes resulting
+          positions to the scroll surface.
+        </li>
+        <li>
+          When user-originated input occurs while programmatic motion is
+          ongoing, user input <em class="rfc2119">MUST</em> take precedence as
+          described in
+          <a href="#a11y-user-override"
+            >User Override and Priority of User Input</a
+          >. Implementations <em class="rfc2119">SHOULD</em> cancel or adjust
+          engine-driven motion in response to such input.
+        </li>
+        <li>
+          Certain domain behaviors (for example, circular domains that require
+          logical wrapping of the scroll surface)
+          <em class="rfc2119">MAY</em> be limited or host-specific in this
+          profile, since user-originated motion is applied directly by the Host
+          Environment.
+        </li>
+      </ul>
+    </section>
 
-  <section id="profile-host-host">
-    <h4 id="profile-host-host-heading">
-      Host-controlled profile (host/host)
-    </h4>
-    <p>
-      In the <dfn>host-controlled profile</dfn>, the Host Environment is both
-      the <a href="#term-user-scroll-authority">user scroll authority</a> and
-      the <a href="#term-programmatic-scroll-authority"
-        >programmatic scroll authority</a
-      >.
-    </p>
-    <ul>
-      <li>
-        User-originated input and programmatic scroll operations are applied
-        directly to the scroll surface by the Host Environment using
-        host-specific mechanisms.
-      </li>
-      <li>
-        The scroll engine acts as an observer: it
-        <em class="rfc2119">MUST</em> be notified of resulting canonical
-        positions and origins in order to drive
-        <a href="#term-scroll-program">scroll programs</a>, scroll-linked
-        effects, and persistence, but it
-        <em class="rfc2119">MUST NOT</em> apply motion to the scroll surface in
-        this profile.
-      </li>
-      <li>
-        This profile is suitable when the primary goal is to coordinate
-        scroll-linked effects, analytics, or persistence with host-native
-        scrolling, without changing how scrolling itself is performed.
-      </li>
-      <li>
-        Domain semantics, particularly for domains that require wrapping or
-        logical repositioning of the scroll surface, <em class="rfc2119">MAY</em>
-        be constrained by the capabilities of the Host Environment in this
-        profile.
-      </li>
-    </ul>
-  </section>
+    <section id="profile-engine-host">
+      <h4 id="profile-engine-host-heading">
+        Engine-user / host-program profile (engine/host)
+      </h4>
+      <p>
+        In the <dfn>engine-user / host-program profile</dfn>, the Scroll Engine
+        Implementation is the
+        <a href="#term-user-scroll-authority">user scroll authority</a>, and the
+        Host Environment is the
+        <a href="#term-programmatic-scroll-authority"
+          >programmatic scroll authority</a
+        >.
+      </p>
+      <ul>
+        <li>
+          User-originated input is translated into
+          <a href="#term-impulse">impulses</a> and delivered to the scroll
+          engine, which computes and applies resulting motion to the scroll
+          surface.
+        </li>
+        <li>
+          Programmatic
+          <a href="#term-scroll-operation">scroll operations</a> are fulfilled
+          by the Host Environment using host-specific mechanisms (for example,
+          native smooth scrolling or discrete jumps). The Host Environment
+          <em class="rfc2119">MUST</em> report resulting canonical positions and
+          origins (typically <code>"program"</code>) back to the scroll engine.
+        </li>
+        <li>
+          The scroll engine <em class="rfc2119">MUST</em> treat host-applied
+          programmatic motion as observable state and
+          <em class="rfc2119">MUST NOT</em> assume that it can override or
+          replace that motion unless explicitly configured to do so by the Host
+          Environment.
+        </li>
+        <li>
+          This profile is suitable when user input must be handled in a
+          highly-custom way by the engine, while programmatic scroll integrates
+          closely with host-native behaviors.
+        </li>
+      </ul>
+    </section>
 
-  <section id="profile-selection">
-    <h4 id="profile-selection-heading">Profile selection</h4>
-    <p>
-      A Host Environment <em class="rfc2119">MAY</em> select different scroll
-      authority profiles for different scroll surfaces or scroll axes, and
-      <em class="rfc2119">MAY</em> allow applications to change profiles at
-      runtime. When profiles change, the Host Environment
-      <em class="rfc2119">MUST</em> ensure that:
-    </p>
-    <ul>
-      <li>
-        the scroll engine maintains a coherent view of canonical position,
-        velocity, direction, and origin across the transition, and
-      </li>
-      <li>
-        <a href="#accessibility">Accessibility</a> requirements, including user
-        override and reduced motion, continue to be satisfied.
-      </li>
-    </ul>
+    <section id="profile-host-host">
+      <h4 id="profile-host-host-heading">
+        Host-controlled profile (host/host)
+      </h4>
+      <p>
+        In the <dfn>host-controlled profile</dfn>, the Host Environment is both
+        the <a href="#term-user-scroll-authority">user scroll authority</a> and
+        the
+        <a href="#term-programmatic-scroll-authority"
+          >programmatic scroll authority</a
+        >.
+      </p>
+      <ul>
+        <li>
+          User-originated input and programmatic scroll operations are applied
+          directly to the scroll surface by the Host Environment using
+          host-specific mechanisms.
+        </li>
+        <li>
+          The scroll engine acts as an observer: it
+          <em class="rfc2119">MUST</em> be notified of resulting canonical
+          positions and origins in order to drive
+          <a href="#term-scroll-program">scroll programs</a>, scroll-linked
+          effects, and persistence, but it
+          <em class="rfc2119">MUST NOT</em> apply motion to the scroll surface
+          in this profile.
+        </li>
+        <li>
+          This profile is suitable when the primary goal is to coordinate
+          scroll-linked effects, analytics, or persistence with host-native
+          scrolling, without changing how scrolling itself is performed.
+        </li>
+        <li>
+          Domain semantics, particularly for domains that require wrapping or
+          logical repositioning of the scroll surface,
+          <em class="rfc2119">MAY</em>
+          be constrained by the capabilities of the Host Environment in this
+          profile.
+        </li>
+      </ul>
+    </section>
+
+    <section id="profile-selection">
+      <h4 id="profile-selection-heading">Profile selection</h4>
+      <p>
+        A Host Environment <em class="rfc2119">MAY</em> select different scroll
+        authority profiles for different scroll surfaces or scroll axes, and
+        <em class="rfc2119">MAY</em> allow applications to change profiles at
+        runtime. When profiles change, the Host Environment
+        <em class="rfc2119">MUST</em> ensure that:
+      </p>
+      <ul>
+        <li>
+          the scroll engine maintains a coherent view of canonical position,
+          velocity, direction, and origin across the transition, and
+        </li>
+        <li>
+          <a href="#accessibility">Accessibility</a> requirements, including
+          user override and reduced motion, continue to be satisfied.
+        </li>
+      </ul>
+    </section>
   </section>
-</section>
 
   <section id="term-velocity-direction">
     <h3 id="term-velocity-direction-heading">Velocity and Direction</h3>
@@ -662,8 +679,9 @@
     </ul>
     <p>
       In configurations where the Host Environment is the
-      <a href="#term-programmatic-scroll-authority">programmatic scroll
-      authority</a>, the notion of a frame can still be used for observation and
+      <a href="#term-programmatic-scroll-authority"
+        >programmatic scroll authority</a
+      >, the notion of a frame can still be used for observation and
       coordination, even if the host applies motion using its own scheduling or
       animation mechanisms.
     </p>
@@ -686,9 +704,10 @@
     </p>
     <p>
       When the Host Environment is the
-      <a href="#term-programmatic-scroll-authority">programmatic scroll
-      authority</a>, motion policies may be expressed in host-specific APIs
-      while still being conceptually aligned with this model.
+      <a href="#term-programmatic-scroll-authority"
+        >programmatic scroll authority</a
+      >, motion policies may be expressed in host-specific APIs while still
+      being conceptually aligned with this model.
     </p>
   </section>
 
@@ -704,8 +723,8 @@
       <li>react to position or lifecycle changes,</li>
       <li>
         adjust targets or impulses within the constraints of the active scroll
-        domain and configured <a href="#term-scroll-authority">scroll
-        authorities</a>, or
+        domain and configured
+        <a href="#term-scroll-authority">scroll authorities</a>, or
       </li>
       <li>
         coordinate scroll position with other host-defined effects (for example,
@@ -756,11 +775,13 @@
         momentum) or idle.
       </li>
       <li>
-        The configured <a href="#term-user-scroll-authority">user scroll
-        authority</a> and <a href="#term-programmatic-scroll-authority"
-          >programmatic scroll authority</a> for the axis, or an equivalent
-        representation of which component currently controls user and
-        programmatic motion.
+        The configured
+        <a href="#term-user-scroll-authority">user scroll authority</a> and
+        <a href="#term-programmatic-scroll-authority"
+          >programmatic scroll authority</a
+        >
+        for the axis, or an equivalent representation of which component
+        currently controls user and programmatic motion.
       </li>
     </ul>
     <p>
@@ -865,8 +886,8 @@
         <dfn>Impulse hooks</dfn>: mechanisms by which scroll programs can
         observe or transform impulses before they are applied to the scroll
         engine, subject to domain constraints, accessibility requirements, and
-        the configured <a href="#term-user-scroll-authority">user scroll
-        authority</a>.
+        the configured
+        <a href="#term-user-scroll-authority">user scroll authority</a>.
       </li>
       <li>
         <dfn>Target hooks</dfn>: mechanisms by which scroll programs can observe
@@ -874,7 +895,8 @@
         before motion is advanced according to a motion policy, and consistent
         with the configured
         <a href="#term-programmatic-scroll-authority"
-          >programmatic scroll authority</a>.
+          >programmatic scroll authority</a
+        >.
       </li>
       <li>
         <dfn>Lifecycle hooks</dfn>: mechanisms that notify scroll programs about
@@ -946,7 +968,8 @@
         Allow user impulses to override or modify the current target position,
         including in configurations where the engine is the
         <a href="#term-programmatic-scroll-authority"
-          >programmatic scroll authority</a>.
+          >programmatic scroll authority</a
+        >.
       </li>
       <li>
         Stop, pause, or alter ongoing motion accordingly, rather than ignoring
@@ -1017,9 +1040,10 @@
         A <dfn>Scroll Authority Configuration</dfn>, which declares the
         <a href="#term-user-scroll-authority">user scroll authority</a> and
         <a href="#term-programmatic-scroll-authority"
-          >programmatic scroll authority</a> for each scroll axis, and thereby
-        determines which component applies motion for user and programmatic
-        actions.
+          >programmatic scroll authority</a
+        >
+        for each scroll axis, and thereby determines which component applies
+        motion for user and programmatic actions.
       </li>
       <li>
         A collection of <dfn>Scroll Programs</dfn>, which attach to the engine’s
@@ -1061,7 +1085,8 @@
             processed by the Scroll Engine, which updates positions over time
             according to the active motion policy (when the engine is the
             <a href="#term-programmatic-scroll-authority"
-              >programmatic scroll authority</a>), or
+              >programmatic scroll authority</a
+            >), or
           </li>
           <li>
             applied directly by the Host Environment using host-specific
