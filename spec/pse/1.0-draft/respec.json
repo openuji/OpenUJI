@@ -1,11 +1,11 @@
 {
   "title": "Programmable Scroll Engine",
   "specStatus": "unofficial",
-  "shortName": "scroll-engine",
+  "shortName": "pse",
   "editors": [
     
   ],
-  "github": "https://github.com/openuji/OpenUJI-Specs/tree/main/spec/ujse/0.1-draft",
+  "github": "https://github.com/openuji/OpenUJI-Specs/tree/main/spec/pse/1.0-draft",
   "license": "w3c-software-doc",
   "localBiblio": {
     "RFC2119": {

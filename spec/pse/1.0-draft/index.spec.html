@@ -1,1084 +1,1253 @@
+<section id="abstract">
+  <p>
+    This specification defines an abstract, platform-agnostic model for a
+    programmable, one-dimensional scroll engine. It describes scroll domains,
+    observable state, and a modular architecture in which host or application
+    code can participate in scroll decisions via programmable hooks and
+    extension points. The model includes special support for circular scroll
+    domains suitable for storytelling and looping interfaces, but does not
+    prescribe a particular user interface or rendering technology.
+  </p>
+  <p>
+    The model is intended to be implementable across a variety of host
+    environments, including web browsers, Android, iOS, and other native or
+    embedded runtimes, while remaining agnostic to specific animation or
+    rendering APIs.
+  </p>
+</section>
 
-    <section id="abstract">
+<section id="sotd">
+  <p>
+    This is an unofficial draft. It is not a W3C Standard, and it has not
+    received any formal review. The contents of this document may change at
+    any time.
+  </p>
+</section>
+
+<section id="intro">
+  <h2 id="intro-heading">Introduction</h2>
+
+  <section id="intro-purpose">
+    <h3 id="intro-purpose-heading">Purpose</h3>
+    <p>
+      Many interactive experiences, including narrative and storytelling
+      interfaces, require scroll behaviors that go beyond conventional
+      bounded content scrolling. Examples include circular or looping
+      scrolls, custom motion profiles, scroll-linked effects, and scroll
+      state that persists across navigations or app sessions.
+    </p>
+    <p>
+      This specification defines a <em>Programmable Scroll Engine Model</em>:
+      an abstract description of how a one-dimensional scroll axis is
+      represented, controlled, and extended. The model is intended to:
+    </p>
+    <ul>
+      <li>
+        Support a variety of scroll domains, including bounded, unbounded,
+        and circular domains.
+      </li>
+      <li>
+        Expose programmable hooks for host or application code to observe,
+        modify, and respond to scroll behavior, without prescribing concrete
+        API shapes.
+      </li>
+      <li>
+        Enable rich control over scroll trajectories (for example, smoothness,
+        easing, and custom motion policies) via pluggable components instead
+        of fixed behavior.
+      </li>
+      <li>
+        Provide a predictable basis for scroll state persistence across
+        navigations and app sessions.
+      </li>
+      <li>
+        Be implementable across multiple platforms and UI toolkits, such as
+        web, Android, iOS, game engines, and custom runtime environments.
+      </li>
+    </ul>
+  </section>
+
+  <section id="intro-scope">
+    <h3 id="intro-scope-heading">Scope</h3>
+    <p>
+      This document defines the abstract data model and high-level
+      architecture of a programmable scroll engine. It does not define
+      concrete API surface or language bindings for specific platforms.
+      Instead, it is expected that separate <em>binding specifications</em>
+      will define how this model maps to:
+    </p>
+    <ul>
+      <li>DOM and CSSOM View APIs in web browsers,</li>
+      <li>
+        native scroll views and list views on platforms such as Android and
+        iOS,
+      </li>
+      <li>and other host-specific scroll surfaces.</li>
+    </ul>
+    <p>
+      This edition intentionally omits detailed algorithms for frame
+      stepping, motion policies, input handling, and specific plugin or
+      middleware formats. It defines abstract extension points and
+      programmable hooks; concrete mechanisms for expressing
+      <a href="#term-scroll-program">scroll programs</a>,
+      <a href="#term-motion-policy">motion policies</a>, and plugins may be
+      specified in future modules or host-specific bindings.
+    </p>
+  </section>
+
+  <section id="intro-out-of-scope">
+    <h3 id="intro-out-of-scope-heading">Out of Scope</h3>
+    <p>
+      The following are out of scope for this edition of the specification:
+    </p>
+    <ul>
+      <li>
+        Detailed algorithms for animation loops, schedulers, and motion
+        policies.
+      </li>
+      <li>
+        Concrete APIs (function signatures, classes, or IDL) for specific
+        platforms.
+      </li>
+      <li>
+        The definition of user interface design, layout, or content
+        structure beyond what is needed to specify scroll behavior.
+      </li>
+      <li>
+        The definition of concrete bindings to platform-specific animation
+        or timing APIs (for example, native animation frameworks or the
+        Web Animations API). Such bindings <em class="rfc2119">MAY</em> be
+        defined in separate documents.
+      </li>
+    </ul>
+  </section>
+</section>
+
+<section id="conformance">
+  <h2 id="conformance-heading">Conformance</h2>
+  <p>
+    As well as sections marked as non-normative, all authoring guidelines,
+    diagrams, examples, and notes in this specification are non-normative.
+    Everything else in this specification is normative.
+  </p>
+  <p>
+    The key words <em class="rfc2119">MUST</em>,
+    <em class="rfc2119">MUST NOT</em>,
+    <em class="rfc2119">REQUIRED</em>,
+    <em class="rfc2119">SHALL</em>,
+    <em class="rfc2119">SHALL NOT</em>,
+    <em class="rfc2119">SHOULD</em>,
+    <em class="rfc2119">SHOULD NOT</em>,
+    <em class="rfc2119">RECOMMENDED</em>,
+    <em class="rfc2119">MAY</em>, and
+    <em class="rfc2119">OPTIONAL</em> in this document are to be
+    interpreted as described in
+    <a data-cite="RFC2119">RFC2119</a>.
+  </p>
+
+  <section id="conformance-implementations">
+    <h3 id="conformance-implementations-heading">
+      Conforming Scroll Engine Implementations
+    </h3>
+    <p>
+      A <dfn>Scroll Engine Implementation</dfn> is any library, module, or
+      component that provides logic for controlling a single scroll axis in
+      accordance with this specification.
+    </p>
+    <p>
+      A conforming Scroll Engine Implementation
+      <em class="rfc2119">MUST</em>:
+    </p>
+    <ul>
+      <li>
+        Represent a single scroll axis with an associated
+        <a href="#scroll-domain">scroll domain</a>.
+      </li>
+      <li>
+        Maintain and provide access to the observable state described in
+        <a href="#data-observable-state">Engine Observable State</a>.
+      </li>
+      <li>
+        Accept both programmatic <a href="#term-scroll-operation"
+          >scroll operations</a
+        >
+        and user-originated <a href="#term-impulse">impulses</a>.
+      </li>
+      <li>
+        Distinguish the <a href="#term-origin">origin</a> of position
+        updates (for example, user, program, or momentum).
+      </li>
+      <li>
+        Provide an observable mechanism for clients to track changes in
+        scroll position and origin, as described in
+        <a href="#data-signals">Signals and Origins</a>.
+      </li>
+      <li>
+        Expose one or more programmable extension points, as described in
+        <a href="#data-programmability">Programmable Extension Points</a>,
+        such that host or application code can observe and, where allowed,
+        influence scroll behavior without violating the semantics of the
+        active scroll domain.
+      </li>
+    </ul>
+    <p>
+      Conforming Scroll Engine Implementations
+      <em class="rfc2119">MAY</em> use any internal representation or
+      underlying platform primitives, as long as the externally observable
+      behavior and extension semantics conform to this specification.
+    </p>
+  </section>
+
+  <section id="conformance-hosts">
+    <h3 id="conformance-hosts-heading">Conforming Host Environments</h3>
+    <p>
+      A <dfn>Host Environment</dfn> is any runtime or platform that embeds a
+      conforming Scroll Engine Implementation and provides a visible scroll
+      surface. Examples include web browsers, Android or iOS applications,
+      game engines, or desktop UI toolkits.
+    </p>
+    <p>
+      A conforming Host Environment
+      <em class="rfc2119">MUST</em>:
+    </p>
+    <ul>
+      <li>
+        Provide at least one <dfn>scroll surface</dfn>: a host-defined
+        entity whose visible content is moved in response to changes in
+        scroll position (for example, a DOM element, a native scroll view,
+        or a camera transform).
+      </li>
+      <li>
+        Define how scroll positions in the scroll engine map to the scroll
+        surface (for example, mapping canonical positions to pixel-based
+        offsets or item indices).
+      </li>
+      <li>
+        Define how user input and lifecycle events in the host environment
+        are translated into <a href="#term-impulse">impulses</a>,
+        <a href="#term-scroll-operation">scroll operations</a>, and
+        persistence operations for the scroll engine.
+      </li>
+      <li>
+        Integrate accessibility-related constraints and behaviors as
+        described in <a href="#accessibility">Accessibility</a>.
+      </li>
+      <li>
+        Ensure that any host-specific APIs or bindings to the scroll engine
+        do not conflict with platform-native animation or timing APIs, and
+        clearly distinguish programmable scroll behavior from other forms
+        of animation.
+      </li>
+    </ul>
+  </section>
+</section>
+
+<section id="terminology">
+  <h2 id="terminology-heading">Terminology</h2>
+
+  <section id="term-scroll-axis">
+    <h3 id="term-scroll-axis-heading">Scroll Axis</h3>
+    <p>
+      A <dfn>scroll axis</dfn> is a single logical dimension along which
+      scrolling occurs. A scroll axis does not assume a particular physical
+      direction; mapping to horizontal or vertical movement is defined by
+      the host environment.
+    </p>
+  </section>
+
+  <section id="term-scroll-position">
+    <h3 id="term-scroll-position-heading">Scroll Position</h3>
+    <p>
+      A <dfn>scroll position</dfn> is a real-valued coordinate on a scroll
+      axis.
+    </p>
+    <p>The model distinguishes two related notions of position:</p>
+    <ul>
+      <li>
+        A <dfn>canonical position</dfn> is the scroll position normalized
+        into the canonical range of the active
+        <a href="#scroll-domain">scroll domain</a> (for example,
+        <code>[min, max]</code> for a bounded domain or
+        <code>[min, min + period)</code> for circular domains).
+      </li>
+      <li>
+        A <dfn>logical position</dfn> is an internal representation of
+        position that <em class="rfc2119">MAY</em> differ from the canonical
+        position by integer multiples of the domain’s period, particularly
+        in circular domains. Logical positions are used to represent
+        potentially unbounded motion over time.
+      </li>
+    </ul>
+  </section>
+
+  <section id="scroll-domain">
+    <h3 id="scroll-domain-heading">Scroll Domain</h3>
+    <p>
+      A <dfn>scroll domain</dfn> describes the allowed range of scroll
+      positions and how positions behave at or beyond the edges of that
+      range. The kinds of scroll domains are defined in
+      <a href="#data-domains">Scroll Domains</a>.
+    </p>
+  </section>
+
+  <section id="term-scroll-operation">
+    <h3 id="term-scroll-operation-heading">Scroll Operation</h3>
+    <p>
+      A <dfn id="term-scroll-operation">scroll operation</dfn> is a
+      programmatic request to change the scroll position. A scroll operation
+      typically specifies a desired target position and possibly additional
+      motion parameters (such as instantaneous vs. animated movement).
+    </p>
+  </section>
+
+  <section id="term-impulse">
+    <h3 id="term-impulse-heading">Impulse</h3>
+    <p>
+      An <dfn id="term-impulse">impulse</dfn> is a discrete change in scroll
+      position originating from user interaction, such as:
+    </p>
+    <ul>
+      <li>mouse wheel or trackpad scrolling,</li>
+      <li>touch or pen dragging gestures,</li>
+      <li>keyboard or keypad navigation,</li>
+      <li>gamepad or switch device actions.</li>
+    </ul>
+    <p>
+      Host environments translate such interactions into impulses that can
+      be consumed by the scroll engine.
+    </p>
+  </section>
+
+  <section id="term-origin">
+    <h3 id="term-origin-heading">Origin</h3>
+    <p>
+      The <dfn id="term-origin">origin</dfn> of a position update is a tag
+      indicating where the update came from. The following origins are
+      defined:
+    </p>
+    <ul>
+      <li>
+        <code>"user"</code>: updates directly caused by user actions, such
+        as wheel or touch input, keyboard navigation, or actions from
+        assistive technologies.
+      </li>
+      <li>
+        <code>"program"</code>: updates requested explicitly by application
+        code, such as a scroll-to-section call.
+      </li>
+      <li>
+        <code>"momentum"</code>: updates that continue motion initially
+        caused by the user, such as inertial scrolling.
+      </li>
+    </ul>
+  </section>
+
+  <section id="term-velocity-direction">
+    <h3 id="term-velocity-direction-heading">Velocity and Direction</h3>
+    <p>
+      <dfn>Velocity</dfn> is a measure of the change in canonical position
+      per unit time, as observed by the scroll engine. The exact units of
+      velocity depend on the host environment’s choice of units for
+      positions and time.
+    </p>
+    <p>
+      <dfn>Direction</dfn> is the sign of the most recent non-zero velocity,
+      commonly represented as:
+    </p>
+    <ul>
+      <li><code>-1</code> for movement in the decreasing direction,</li>
+      <li><code>0</code> for no movement,</li>
+      <li><code>+1</code> for movement in the increasing direction.</li>
+    </ul>
+  </section>
+
+  <section id="term-frame">
+    <h3 id="term-frame-heading">Frame</h3>
+    <p>
+      A <dfn>frame</dfn> is a single evaluation step of the scroll engine in
+      which it:
+    </p>
+    <ul>
+      <li>considers any pending impulses and scroll operations,</li>
+      <li>advances motion over time according to a motion policy, and</li>
+      <li>updates observable state.</li>
+    </ul>
+  </section>
+
+  <section id="term-motion-policy">
+    <h3 id="term-motion-policy-heading">Motion Policy</h3>
+    <p>
+      A <dfn id="term-motion-policy">motion policy</dfn> is an abstract
+      component that determines how scroll positions evolve over time from
+      the current position towards a target position. Examples include
+      instantaneous jumps, exponential easing, critically damped motion, or
+      fixed-duration transitions.
+    </p>
+    <p>
+      The concrete representation of motion policies (for example, code,
+      configuration objects, or declarative descriptions) is host-specific.
+      This specification only requires that motion policies can be selected
+      or replaced by host or application code in a controlled manner.
+    </p>
+  </section>
+
+  <section id="term-scroll-program">
+    <h3 id="term-scroll-program-heading">Scroll Program</h3>
+    <p>
+      A <dfn id="term-scroll-program">scroll program</dfn> is host- or
+      application-defined logic that observes or influences the behavior of
+      a scroll engine via its programmable extension points. A scroll
+      program may:
+    </p>
+    <ul>
+      <li>observe scroll position, velocity, and direction,</li>
+      <li>react to position or lifecycle changes,</li>
+      <li>
+        adjust targets or impulses within the constraints of the active
+        scroll domain, or
+      </li>
+      <li>
+        coordinate scroll position with other host-defined effects (for
+        example, scroll-linked visual changes).
+      </li>
+    </ul>
+    <p>
+      This specification does not define a particular language or format
+      for scroll programs; it only requires that conforming implementations
+      provide a way for such logic to be attached and invoked.
+    </p>
+  </section>
+</section>
+
+<section id="data-model">
+  <h2 id="data-model-heading">Data Model</h2>
+
+  <section id="data-domains">
+    <h3 id="data-domains-heading">Scroll Domains</h3>
+    <p>
+      A scroll domain is categorized into one of several
+      <dfn>domain kinds</dfn>. Each domain kind defines constraints on
+      canonical positions and behavior at or beyond domain edges.
+    </p>
+
+    <section id="domain-bounded">
+      <h4 id="domain-bounded-heading">Bounded domain</h4>
       <p>
-        This specification defines an abstract, platform-agnostic model for a
-        one-dimensional scroll engine. It describes scroll domains, observable
-        state, and high-level architecture, including special support for
-        circular scroll domains suitable for storytelling and looping
-        interfaces. The model is intended to be implementable across a variety
-        of host environments, including web browsers, Android, iOS, and other
-        native or embedded runtimes.
+        A <dfn>bounded domain</dfn> has two parameters:
+        <code>min</code> and <code>max</code>, with
+        <code>min ≤ max</code>.
+      </p>
+      <ul>
+        <li>
+          Canonical positions <em class="rfc2119">MUST</em> be clamped to
+          the interval <code>[min, max]</code>.
+        </li>
+        <li>
+          Motion that attempts to move beyond <code>min</code> or
+          <code>max</code> <em class="rfc2119">MUST</em> result in a
+          canonical position equal to the corresponding bound.
+        </li>
+        <li>No wrapping occurs at either end of the domain.</li>
+      </ul>
+    </section>
+
+    <section id="domain-end-unbounded">
+      <h4 id="domain-end-unbounded-heading">End-unbounded domain</h4>
+      <p>
+        An <dfn>end-unbounded domain</dfn> has a single parameter:
+        <code>min</code>.
+      </p>
+      <ul>
+        <li>
+          Canonical positions <em class="rfc2119">MUST</em> satisfy
+          <code>position ≥ min</code>.
+        </li>
+        <li>
+          There is no upper bound. Motion that moves beyond any current
+          content extent <em class="rfc2119">MAY</em> still be represented
+          by canonical positions greater than any previous value.
+        </li>
+      </ul>
+    </section>
+
+    <section id="domain-all-unbounded">
+      <h4 id="domain-all-unbounded-heading">All-unbounded domain</h4>
+      <p>
+        An <dfn>all-unbounded domain</dfn> has no fixed bounds on canonical
+        positions.
+      </p>
+      <ul>
+        <li>
+          Canonical positions <em class="rfc2119">MAY</em> take any real
+          value.
+        </li>
+        <li>
+          The domain does not impose clamping or wrapping in either
+          direction.
+        </li>
+      </ul>
+    </section>
+
+    <section id="domain-circular-unbounded">
+      <h4 id="domain-circular-unbounded-heading">
+        Circular-unbounded domain
+      </h4>
+      <p>
+        A <dfn>circular-unbounded domain</dfn> has two parameters:
+        <code>min</code> and a strictly positive <code>period</code>.
+      </p>
+      <p>A derived value <code>max</code> is defined as:</p>
+      <pre><code>max = min + period</code></pre>
+      <p>The domain has the following semantics:</p>
+      <ul>
+        <li>
+          Canonical positions <em class="rfc2119">MUST</em> lie in the half
+          open interval <code>[min, max)</code>.
+        </li>
+        <li>
+          Any raw position <code>v</code> is mapped to a canonical position
+          <code>c</code> by applying modulo <code>period</code> into
+          <code>[min, max)</code>.
+        </li>
+        <li>
+          Implementations <em class="rfc2119">MAY</em> maintain a logical
+          position that differs from the canonical position by integer
+          multiples of <code>period</code> in order to represent
+          potentially unbounded motion.
+        </li>
+        <li>
+          When selecting a logical position corresponding to a canonical
+          position, implementations <em class="rfc2119">SHOULD</em> choose a
+          value that is as close as possible to the previous logical
+          position, minimizing apparent jumps.
+        </li>
+        <li>
+          Motion that moves beyond <code>max</code> in the increasing
+          direction <em class="rfc2119">MUST</em> wrap to
+          <code>min</code> plus any overflow modulo <code>period</code>.
+        </li>
+        <li>
+          Motion that moves below <code>min</code> in the decreasing
+          direction <em class="rfc2119">MUST</em> wrap to
+          <code>max</code> minus any underflow modulo <code>period</code>.
+        </li>
+      </ul>
+      <p class="note">
+        The behavior of the original implementation’s <code>circular</code>
+        domain corresponds to this <em>circular-unbounded</em> domain:
+        wrapping is symmetric in both directions.
       </p>
     </section>
 
-    <section id="sotd">
+    <section id="domain-circular-end-unbounded">
+      <h4 id="domain-circular-end-unbounded-heading">
+        Circular end-unbounded domain
+      </h4>
       <p>
-        This is an unofficial draft. It is not a W3C Standard, and it has not
-        received any formal review. The contents of this document may change at
-        any time.
-      </p>
-    </section>
-
-    <section id="intro">
-      <h2 id="intro-heading">Introduction</h2>
-
-      <section id="intro-purpose">
-        <h3 id="intro-purpose-heading">Purpose</h3>
-        <p>
-          Many interactive experiences, including narrative and storytelling
-          interfaces, require scroll behaviors that go beyond conventional
-          bounded content scrolling. Examples include circular or looping
-          scrolls, custom smoothness profiles, and scroll states that persist
-          across navigations or app sessions.
-        </p>
-        <p>
-          This specification defines a <em>Scroll Engine Model</em>: an abstract
-          description of how a one-dimensional scroll axis is represented and
-          controlled. The model is intended to:
-        </p>
-        <ul>
-          <li>
-            Support a variety of scroll domains, including bounded, unbounded,
-            and circular domains.
-          </li>
-          <li>
-            Enable rich control over scroll trajectories (e.g., smoothness,
-            easing, custom motion policies).
-          </li>
-          <li>
-            Provide a predictable basis for scroll state persistence across
-            navigations and app sessions.
-          </li>
-          <li>
-            Be implementable across multiple platforms and UI toolkits, such as
-            web, Android, iOS, game engines, and custom runtime environments.
-          </li>
-        </ul>
-      </section>
-
-      <section id="intro-scope">
-        <h3 id="intro-scope-heading">Scope</h3>
-        <p>
-          This document defines the abstract data model and high-level
-          architecture of a scroll engine. It does not define concrete API
-          surface or language bindings for specific platforms. Instead, it is
-          expected that separate <em>binding specifications</em> will define how
-          this model maps to:
-        </p>
-        <ul>
-          <li>DOM and CSSOM View APIs in web browsers,</li>
-          <li>
-            native scroll views and list views on platforms such as Android and
-            iOS,
-          </li>
-          <li>and other host-specific scroll surfaces.</li>
-        </ul>
-        <p>
-          This edition intentionally omits detailed algorithms for frame
-          stepping, motion policies, input handling, plugins, and middleware.
-          Those may be specified in future modules.
-        </p>
-      </section>
-
-      <section id="intro-out-of-scope">
-        <h3 id="intro-out-of-scope-heading">Out of Scope</h3>
-        <p>
-          The following are out of scope for this edition of the specification:
-        </p>
-        <ul>
-          <li>
-            Detailed algorithms for animation loops, schedulers, and motion
-            policies.
-          </li>
-          <li>
-            Concrete APIs (function signatures, classes, or IDL) for specific
-            platforms.
-          </li>
-          <li>
-            The definition of user interface design, layout, or content
-            structure beyond what is needed to specify scroll behavior.
-          </li>
-        </ul>
-      </section>
-    </section>
-
-    <section id="conformance">
-      <h2 id="conformance-heading">Conformance</h2>
-      <p>
-        As well as sections marked as non-normative, all authoring guidelines,
-        diagrams, examples, and notes in this specification are non-normative.
-        Everything else in this specification is normative.
+        A <dfn>circular end-unbounded domain</dfn> has the same parameters
+        as a circular-unbounded domain:
+        <code>min</code> and a strictly positive <code>period</code>, with
+        <code>max = min + period</code>.
       </p>
       <p>
-        The key words <em class="rfc2119">MUST</em>,
-        <em class="rfc2119">MUST NOT</em>,
-        <em class="rfc2119">REQUIRED</em>,
-        <em class="rfc2119">SHALL</em>,
-        <em class="rfc2119">SHALL NOT</em>,
-        <em class="rfc2119">SHOULD</em>,
-        <em class="rfc2119">SHOULD NOT</em>,
-        <em class="rfc2119">RECOMMENDED</em>,
-        <em class="rfc2119">MAY</em>, and
-        <em class="rfc2119">OPTIONAL</em> in this document are to be
-        interpreted as described in
-        <a data-cite="RFC2119">RFC2119</a>.
+        Canonical positions <em class="rfc2119">MUST</em> lie in
+        <code>[min, max)</code>, but the wrapping behavior is asymmetric:
       </p>
-
-      <section id="conformance-implementations">
-        <h3 id="conformance-implementations-heading">
-          Conforming Scroll Engine Implementations
-        </h3>
-        <p>
-          A <dfn>Scroll Engine Implementation</dfn> is any library, module, or
-          component that provides logic for controlling a single scroll axis in
-          accordance with this specification.
-        </p>
-        <p>
-          A conforming Scroll Engine Implementation
-          <em class="rfc2119">MUST</em>:
-        </p>
-        <ul>
-          <li>
-            Represent a single scroll axis with an associated
-            <a href="#scroll-domain">scroll domain</a>.
-          </li>
-          <li>
-            Maintain and provide access to the observable state described in
-            <a href="#data-observable-state">Engine Observable State</a>.
-          </li>
-          <li>
-            Accept both programmatic <a href="#term-scroll-operation"
-              >scroll operations</a
-            >
-            and user-originated <a href="#term-impulse">impulses</a>.
-          </li>
-          <li>
-            Distinguish the <a href="#term-origin">origin</a> of position
-            updates (user, program, momentum).
-          </li>
-          <li>
-            Provide an observable mechanism for clients to track changes in
-            scroll position and origin, as described in
-            <a href="#data-signals">Signals and Origins</a>.
-          </li>
-        </ul>
-        <p>
-          Conforming Scroll Engine Implementations
-          <em class="rfc2119">MAY</em> use any internal representation or
-          underlying platform primitives, as long as the externally observable
-          behavior conforms to this specification.
-        </p>
-      </section>
-
-      <section id="conformance-hosts">
-        <h3 id="conformance-hosts-heading">Conforming Host Environments</h3>
-        <p>
-          A <dfn>Host Environment</dfn> is any runtime or platform that embeds a
-          conforming Scroll Engine Implementation and provides a visible scroll
-          surface. Examples include web browsers, Android or iOS applications,
-          game engines, or desktop UI toolkits.
-        </p>
-        <p>
-          A conforming Host Environment
-          <em class="rfc2119">MUST</em>:
-        </p>
-        <ul>
-          <li>
-            Provide at least one <dfn>scroll surface</dfn>: a host-defined
-            entity whose visible content is moved in response to changes in
-            scroll position (for example, a DOM element, a native scroll view,
-            or a camera transform).
-          </li>
-          <li>
-            Define how scroll positions in the scroll engine map to the scroll
-            surface (for example, mapping canonical positions to pixel-based
-            offsets or item indices).
-          </li>
-          <li>
-            Define how user input and lifecycle events in the host environment
-            are translated into <a href="#term-impulse">impulses</a> and
-            persistence operations for the scroll engine.
-          </li>
-          <li>
-            Integrate accessibility-related constraints and behaviors as
-            described in <a href="#accessibility">Accessibility</a>.
-          </li>
-        </ul>
-      </section>
+      <ul>
+        <li>
+          In the <em>increasing</em> direction (for example, a user scrolling
+          “forward” or “down”), motion that moves beyond
+          <code>max</code> <em class="rfc2119">MUST</em> wrap to
+          <code>min</code> plus any overflow modulo <code>period</code>.
+          This allows repeated looping as the user continues in the
+          increasing direction.
+        </li>
+        <li>
+          In the <em>decreasing</em> direction (for example, a user scrolling
+          “backward” or “up”), motion that moves below <code>min</code>
+          <em class="rfc2119">MUST</em> be clamped at <code>min</code>. No
+          wrap from top back to bottom occurs in this direction.
+        </li>
+      </ul>
+      <p>
+        Implementations <em class="rfc2119">MAY</em> maintain a logical
+        position similarly to the circular-unbounded domain, but
+        <em class="rfc2119">MUST NOT</em> introduce wraps from top to
+        bottom when motion proceeds in the decreasing direction.
+      </p>
+      <p class="note">
+        This domain is suitable for narratives where looping is only allowed
+        in one direction (for example, looping when scrolling down through a
+        story, but not when scrolling back up).
+      </p>
     </section>
+  </section>
 
-    <section id="terminology">
-      <h2 id="terminology-heading">Terminology</h2>
+  <section id="data-observable-state">
+    <h3 id="data-observable-state-heading">Engine Observable State</h3>
+    <p>
+      A conforming Scroll Engine Implementation
+      <em class="rfc2119">MUST</em> maintain and expose at least the
+      following observable state:
+    </p>
+    <ul>
+      <li>
+        The current <a href="#term-scroll-position">canonical position</a>.
+      </li>
+      <li>
+        The active <a href="#scroll-domain">scroll domain</a> and any
+        domain parameters (such as <code>min</code>, <code>max</code>, and
+        <code>period</code>).
+      </li>
+      <li>
+        The current <a href="#term-velocity-direction">velocity and
+        direction</a>, derived from changes in canonical position over time.
+      </li>
+      <li>
+        A conceptual <dfn>target position</dfn>, representing the position
+        towards which the engine is currently moving. In circular domains,
+        implementations <em class="rfc2119">MAY</em> track both canonical
+        and logical components of the target.
+      </li>
+      <li>
+        A <dfn>running flag</dfn> indicating whether the engine considers
+        the scroll to be “in motion” (for example, during ongoing animation
+        or momentum) or idle.
+      </li>
+    </ul>
+    <p>
+      The concrete API shape used to expose this state is host- and
+      language-specific, but conforming implementations
+      <em class="rfc2119">MUST</em> provide some mechanism to observe it,
+      and programmable extension points
+      <em class="rfc2119">MUST</em> have access to this observable state.
+    </p>
+  </section>
 
-      <section id="term-scroll-axis">
-        <h3 id="term-scroll-axis-heading">Scroll Axis</h3>
-        <p>
-          A <dfn>scroll axis</dfn> is a single logical dimension along which
-          scrolling occurs. A scroll axis does not assume a particular physical
-          direction; mapping to horizontal or vertical movement is defined by
-          the host environment.
-        </p>
-      </section>
-
-      <section id="term-scroll-position">
-        <h3 id="term-scroll-position-heading">Scroll Position</h3>
-        <p>
-          A <dfn>scroll position</dfn> is a real-valued coordinate on a scroll
-          axis.
-        </p>
-        <p>The model distinguishes two related notions of position:</p>
-        <ul>
-          <li>
-            A <dfn>canonical position</dfn> is the scroll position normalized
-            into the canonical range of the active
-            <a href="#scroll-domain">scroll domain</a> (for example,
-            <code>[min, max]</code> for a bounded domain or
-            <code>[min, min + period)</code> for circular domains).
-          </li>
-          <li>
-            A <dfn>logical position</dfn> is an internal representation of
-            position that <em class="rfc2119">MAY</em> differ from the canonical
-            position by integer multiples of the domain’s period, particularly
-            in circular domains. Logical positions are used to represent
-            potentially unbounded motion over time.
-          </li>
-        </ul>
-      </section>
-
-      <section id="scroll-domain">
-        <h3 id="scroll-domain-heading">Scroll Domain</h3>
-        <p>
-          A <dfn>scroll domain</dfn> describes the allowed range of scroll
-          positions and how positions behave at or beyond the edges of that
-          range. The kinds of scroll domains are defined in
-          <a href="#data-domains">Scroll Domains</a>.
-        </p>
-      </section>
-
-      <section id="term-scroll-operation">
-        <h3 id="term-scroll-operation-heading">Scroll Operation</h3>
-        <p>
-          A <dfn id="term-scroll-operation">scroll operation</dfn> is a
-          programmatic request to change the scroll position. A scroll operation
-          typically specifies a desired target position and possibly additional
-          motion parameters (such as instantaneous vs. animated movement).
-        </p>
-      </section>
-
-      <section id="term-impulse">
-        <h3 id="term-impulse-heading">Impulse</h3>
-        <p>
-          An <dfn id="term-impulse">impulse</dfn> is a discrete change in scroll
-          position originating from user interaction, such as:
-        </p>
-        <ul>
-          <li>mouse wheel or trackpad scrolling,</li>
-          <li>touch or pen dragging gestures,</li>
-          <li>keyboard or keypad navigation,</li>
-          <li>gamepad or switch device actions.</li>
-        </ul>
-        <p>
-          Host environments translate such interactions into impulses that can
-          be consumed by the scroll engine.
-        </p>
-      </section>
-
-      <section id="term-origin">
-        <h3 id="term-origin-heading">Origin</h3>
-        <p>
-          The <dfn id="term-origin">origin</dfn> of a position update is a tag
-          indicating where the update came from. The following origins are
-          defined:
-        </p>
-        <ul>
-          <li>
-            <code>"user"</code>: updates directly caused by user actions, such
-            as wheel or touch input, keyboard navigation, or actions from
-            assistive technologies.
-          </li>
-          <li>
-            <code>"program"</code>: updates requested explicitly by application
-            code, such as a scroll-to-section call.
-          </li>
-          <li>
-            <code>"momentum"</code>: updates that continue motion initially
-            caused by the user, such as inertial scrolling.
-          </li>
-        </ul>
-      </section>
-
-      <section id="term-velocity-direction">
-        <h3 id="term-velocity-direction-heading">Velocity and Direction</h3>
-        <p>
-          <dfn>Velocity</dfn> is a measure of the change in canonical position
-          per unit time, as observed by the scroll engine. The exact units of
-          velocity depend on the host environment’s choice of units for
-          positions and time.
-        </p>
-        <p>
-          <dfn>Direction</dfn> is the sign of the most recent non-zero velocity,
-          commonly represented as:
-        </p>
-        <ul>
-          <li><code>-1</code> for movement in the decreasing direction,</li>
-          <li><code>0</code> for no movement,</li>
-          <li><code>+1</code> for movement in the increasing direction.</li>
-        </ul>
-      </section>
-
-      <section id="term-frame">
-        <h3 id="term-frame-heading">Frame</h3>
-        <p>
-          A <dfn>frame</dfn> is a single evaluation step of the scroll engine in
-          which it:
-        </p>
-        <ul>
-          <li>considers any pending impulses and scroll operations,</li>
-          <li>advances motion over time according to a motion policy, and</li>
-          <li>updates observable state.</li>
-        </ul>
-      </section>
-    </section>
-
-    <section id="data-model">
-      <h2 id="data-model-heading">Data Model</h2>
-
-      <section id="data-domains">
-        <h3 id="data-domains-heading">Scroll Domains</h3>
-        <p>
-          A scroll domain is categorized into one of several
-          <dfn>domain kinds</dfn>. Each domain kind defines constraints on
-          canonical positions and behavior at or beyond domain edges.
-        </p>
-
-        <section id="domain-bounded">
-          <h4 id="domain-bounded-heading">Bounded domain</h4>
-          <p>
-            A <dfn>bounded domain</dfn> has two parameters:
-            <code>min</code> and <code>max</code>, with
-            <code>min ≤ max</code>.
-          </p>
-          <ul>
-            <li>
-              Canonical positions <em class="rfc2119">MUST</em> be clamped to
-              the interval <code>[min, max]</code>.
-            </li>
-            <li>
-              Motion that attempts to move beyond <code>min</code> or
-              <code>max</code> <em class="rfc2119">MUST</em> result in a
-              canonical position equal to the corresponding bound.
-            </li>
-            <li>No wrapping occurs at either end of the domain.</li>
-          </ul>
-        </section>
-
-        <section id="domain-end-unbounded">
-          <h4 id="domain-end-unbounded-heading">End-unbounded domain</h4>
-          <p>
-            An <dfn>end-unbounded domain</dfn> has a single parameter:
-            <code>min</code>.
-          </p>
-          <ul>
-            <li>
-              Canonical positions <em class="rfc2119">MUST</em> satisfy
-              <code>position ≥ min</code>.
-            </li>
-            <li>
-              There is no upper bound. Motion that moves beyond any current
-              content extent <em class="rfc2119">MAY</em> still be represented
-              by canonical positions greater than any previous value.
-            </li>
-          </ul>
-        </section>
-
-        <section id="domain-all-unbounded">
-          <h4 id="domain-all-unbounded-heading">All-unbounded domain</h4>
-          <p>
-            An <dfn>all-unbounded domain</dfn> has no fixed bounds on canonical
-            positions.
-          </p>
-          <ul>
-            <li>
-              Canonical positions <em class="rfc2119">MAY</em> take any real
-              value.
-            </li>
-            <li>
-              The domain does not impose clamping or wrapping in either
-              direction.
-            </li>
-          </ul>
-        </section>
-
-        <section id="domain-circular-unbounded">
-          <h4 id="domain-circular-unbounded-heading">
-            Circular-unbounded domain
-          </h4>
-          <p>
-            A <dfn>circular-unbounded domain</dfn> has two parameters:
-            <code>min</code> and a strictly positive <code>period</code>.
-          </p>
-          <p>A derived value <code>max</code> is defined as:</p>
-          <pre><code>max = min + period</code></pre>
-          <p>The domain has the following semantics:</p>
-          <ul>
-            <li>
-              Canonical positions <em class="rfc2119">MUST</em> lie in the half
-              open interval <code>[min, max)</code>.
-            </li>
-            <li>
-              Any raw position <code>v</code> is mapped to a canonical position
-              <code>c</code> by applying modulo <code>period</code> into
-              <code>[min, max)</code>.
-            </li>
-            <li>
-              Implementations <em class="rfc2119">MAY</em> maintain a logical
-              position that differs from the canonical position by integer
-              multiples of <code>period</code> in order to represent
-              potentially unbounded motion.
-            </li>
-            <li>
-              When selecting a logical position corresponding to a canonical
-              position, implementations <em class="rfc2119">SHOULD</em> choose a
-              value that is as close as possible to the previous logical
-              position, minimizing apparent jumps.
-            </li>
-            <li>
-              Motion that moves beyond <code>max</code> in the increasing
-              direction <em class="rfc2119">MUST</em> wrap to
-              <code>min</code> plus any overflow modulo <code>period</code>.
-            </li>
-            <li>
-              Motion that moves below <code>min</code> in the decreasing
-              direction <em class="rfc2119">MUST</em> wrap to
-              <code>max</code> minus any underflow modulo <code>period</code>.
-            </li>
-          </ul>
-          <p class="note">
-            The behavior of the original implementation’s <code>circular</code>
-            domain corresponds to this <em>circular-unbounded</em> domain:
-            wrapping is symmetric in both directions.
-          </p>
-        </section>
-
-        <section id="domain-circular-end-unbounded">
-          <h4 id="domain-circular-end-unbounded-heading">
-            Circular end-unbounded domain
-          </h4>
-          <p>
-            A <dfn>circular end-unbounded domain</dfn> has the same parameters
-            as a circular-unbounded domain:
-            <code>min</code> and a strictly positive <code>period</code>, with
-            <code>max = min + period</code>.
-          </p>
-          <p>
-            Canonical positions <em class="rfc2119">MUST</em> lie in
-            <code>[min, max)</code>, but the wrapping behavior is asymmetric:
-          </p>
-          <ul>
-            <li>
-              In the <em>increasing</em> direction (for example, a user scrolling
-              “forward” or “down”), motion that moves beyond
-              <code>max</code> <em class="rfc2119">MUST</em> wrap to
-              <code>min</code> plus any overflow modulo <code>period</code>.
-              This allows repeated looping as the user continues in the
-              increasing direction.
-            </li>
-            <li>
-              In the <em>decreasing</em> direction (for example, a user scrolling
-              “backward” or “up”), motion that moves below <code>min</code>
-              <em class="rfc2119">MUST</em> be clamped at <code>min</code>. No
-              wrap from top back to bottom occurs in this direction.
-            </li>
-          </ul>
-          <p>
-            Implementations <em class="rfc2119">MAY</em> maintain a logical
-            position similarly to the circular-unbounded domain, but
-            <em class="rfc2119">MUST NOT</em> introduce wraps from top to
-            bottom when motion proceeds in the decreasing direction.
-          </p>
-          <p class="note">
-            This domain is suitable for narratives where looping is only allowed
-            in one direction (for example, looping when scrolling down through a
-            story, but not when scrolling back up).
-          </p>
-        </section>
-      </section>
-
-      <section id="data-observable-state">
-        <h3 id="data-observable-state-heading">Engine Observable State</h3>
-        <p>
-          A conforming Scroll Engine Implementation
-          <em class="rfc2119">MUST</em> maintain and expose at least the
-          following observable state:
-        </p>
-        <ul>
-          <li>
-            The current <a href="#term-scroll-position">canonical position</a>.
-          </li>
-          <li>
-            The active <a href="#scroll-domain">scroll domain</a> and any
-            domain parameters (such as <code>min</code>, <code>max</code>, and
-            <code>period</code>).
-          </li>
-          <li>
-            The current <a href="#term-velocity-direction">velocity and
-            direction</a>, derived from changes in canonical position over time.
-          </li>
-          <li>
-            A conceptual <dfn>target position</dfn>, representing the position
-            towards which the engine is currently moving. In circular domains,
-            implementations <em class="rfc2119">MAY</em> track both canonical
-            and logical components of the target.
-          </li>
-          <li>
-            A <dfn>running flag</dfn> indicating whether the engine considers
-            the scroll to be “in motion” (for example, during ongoing animation
-            or momentum) or idle.
-          </li>
-        </ul>
-        <p>
-          The concrete API shape used to expose this state is host- and
-          language-specific, but conforming implementations
-          <em class="rfc2119">MUST</em> provide some mechanism to observe it.
-        </p>
-      </section>
-
-      <section id="data-snapshot">
-        <h3 id="data-snapshot-heading">Scroll State Snapshot</h3>
-        <p>
-          A <dfn>Scroll State Snapshot</dfn> captures the scroll engine’s
-          position at a point in time for the purpose of persistence or
-          restoration.
-        </p>
-        <p>
-          A Scroll State Snapshot <em class="rfc2119">MUST</em> contain at
-          least:
-        </p>
-        <ul>
-          <li>
-            An ordered collection of per-axis positions, where each axis state
-            includes a <code>position</code> field representing the canonical
-            position on that axis.
-          </li>
-          <li>
-            A <dfn>timestamp</dfn> value, whose units are defined by the host
-            environment (for example, milliseconds since epoch or a
-            monotonic clock).
-          </li>
-        </ul>
-        <p>
-          An abstract shape for a Scroll State Snapshot is:
-        </p>
-        <pre><code>{
+  <section id="data-snapshot">
+    <h3 id="data-snapshot-heading">Scroll State Snapshot</h3>
+    <p>
+      A <dfn>Scroll State Snapshot</dfn> captures the scroll engine’s
+      position at a point in time for the purpose of persistence or
+      restoration.
+    </p>
+    <p>
+      A Scroll State Snapshot <em class="rfc2119">MUST</em> contain at
+      least:
+    </p>
+    <ul>
+      <li>
+        An ordered collection of per-axis positions, where each axis state
+        includes a <code>position</code> field representing the canonical
+        position on that axis.
+      </li>
+      <li>
+        A <dfn>timestamp</dfn> value, whose units are defined by the host
+        environment (for example, milliseconds since epoch or a
+        monotonic clock).
+      </li>
+    </ul>
+    <p>
+      An abstract shape for a Scroll State Snapshot is:
+    </p>
+    <pre><code>{
   axes: [{ position: &lt;number&gt; }, ...],
   timestamp: &lt;number&gt;
 }</code></pre>
-        <p>
-          Host environments <em class="rfc2119">MAY</em> serialize snapshots to
-          JSON, binary formats, or other representations suitable for their
-          storage mechanisms.
-        </p>
-      </section>
+    <p>
+      Host environments <em class="rfc2119">MAY</em> serialize snapshots to
+      JSON, binary formats, or other representations suitable for their
+      storage mechanisms.
+    </p>
+  </section>
 
-      <section id="data-signals">
-        <h3 id="data-signals-heading">Signals and Origins</h3>
-        <p>
-          A Scroll Engine Implementation <em class="rfc2119">MAY</em> expose
-          position updates via an observable
-          <dfn>scroll signal</dfn> abstraction. A scroll signal has:
-        </p>
-        <ul>
-          <li>a current canonical position value, and</li>
-          <li>a set of registered listeners.</li>
-        </ul>
-        <p>
-          When the scroll engine updates the canonical position, it
-          <em class="rfc2119">MAY</em> notify listeners with:
-        </p>
-        <ul>
-          <li>the new canonical position, and</li>
-          <li>
-            the <a href="#term-origin">origin</a> of the update (user, program,
-            or momentum).
-          </li>
-        </ul>
-        <p>
-          Errors thrown by listeners
-          <em class="rfc2119">MUST NOT</em> compromise the scroll engine’s
-          internal state or prevent further updates.
-        </p>
-        <p>
-          Even if a scroll signal abstraction is not used, conforming
-          implementations <em class="rfc2119">MUST</em> provide an equivalent
-          mechanism for clients to observe position changes together with their
-          origin.
-        </p>
-      </section>
-    </section>
+  <section id="data-signals">
+    <h3 id="data-signals-heading">Signals and Origins</h3>
+    <p>
+      A Scroll Engine Implementation <em class="rfc2119">MAY</em> expose
+      position updates via an observable
+      <dfn>scroll signal</dfn> abstraction. A scroll signal has:
+    </p>
+    <ul>
+      <li>a current canonical position value, and</li>
+      <li>a set of registered listeners.</li>
+    </ul>
+    <p>
+      When the scroll engine updates the canonical position, it
+      <em class="rfc2119">MAY</em> notify listeners with:
+    </p>
+    <ul>
+      <li>the new canonical position, and</li>
+      <li>
+        the <a href="#term-origin">origin</a> of the update (user, program,
+        or momentum).
+      </li>
+    </ul>
+    <p>
+      Errors thrown by listeners
+      <em class="rfc2119">MUST NOT</em> compromise the scroll engine’s
+      internal state or prevent further updates.
+    </p>
+    <p>
+      Even if a scroll signal abstraction is not used, conforming
+      implementations <em class="rfc2119">MUST</em> provide an equivalent
+      mechanism for clients and scroll programs to observe position changes
+      together with their origin.
+    </p>
+  </section>
 
-    <section id="accessibility">
-      <h2 id="accessibility-heading">Accessibility</h2>
+  <section id="data-programmability">
+    <h3 id="data-programmability-heading">Programmable Extension Points</h3>
+    <p>
+      A conforming Scroll Engine Implementation
+      <em class="rfc2119">MUST</em> provide one or more abstract extension
+      points that allow host or application code to participate in scroll
+      behavior as <a href="#term-scroll-program">scroll programs</a>.
+      Extension points are conceptual hook sites; their concrete API shapes
+      are host-specific.
+    </p>
+    <p>
+      At minimum, an implementation <em class="rfc2119">MUST</em> support
+      the following categories of extension points:
+    </p>
+    <ul>
+      <li>
+        <dfn>Observation hooks</dfn>: mechanisms by which scroll programs
+        can observe changes to canonical position, velocity, direction,
+        domain parameters, and target position.
+      </li>
+      <li>
+        <dfn>Impulse hooks</dfn>: mechanisms by which scroll programs can
+        observe or transform impulses before they are applied to the scroll
+        engine, subject to domain constraints and accessibility
+        requirements.
+      </li>
+      <li>
+        <dfn>Target hooks</dfn>: mechanisms by which scroll programs can
+        observe or adjust target positions derived from scroll operations
+        or impulses, before motion is advanced according to a motion policy.
+      </li>
+      <li>
+        <dfn>Lifecycle hooks</dfn>: mechanisms that notify scroll programs
+        about start, continuation, and settlement of motion, including
+        access to <a href="#term-origin">origin</a> information.
+      </li>
+    </ul>
+    <p>
+      Implementations <em class="rfc2119">MUST</em> ensure that scroll
+      programs cannot violate the semantics of the active scroll domain.
+      For example, any transformed position or target
+      <em class="rfc2119">MUST</em> be interpreted in terms of canonical
+      and logical positions as defined in
+      <a href="#data-domains">Scroll Domains</a>.
+    </p>
+    <p>
+      Host environments <em class="rfc2119">MAY</em> expose these extension
+      points as event listeners, callback registries, reactive signals, or
+      other mechanisms, provided that the behavioral guarantees in this
+      section are preserved.
+    </p>
+  </section>
+</section>
 
-      <section id="a11y-principles">
-        <h3 id="a11y-principles-heading">General Principles</h3>
-        <p>
-          A conforming Scroll Engine Implementation and its Host Environment
-          <em class="rfc2119">MUST</em> support accessible scrolling
-          experiences. This includes:
-        </p>
-        <ul>
-          <li>
-            Ensuring that the user remains in control of scroll motion, and that
-            user input can override programmatic motion.
-          </li>
-          <li>
-            Respecting platform accessibility settings, including preferences
-            for reduced motion or similar features.
-          </li>
-          <li>
-            Supporting keyboard, keypad, switch, and other assistive input as
-            first-class means of controlling scroll.
-          </li>
-          <li>
-            Avoiding motion that cannot be paused, stopped, or overridden by the
-            user.
-          </li>
-        </ul>
-      </section>
+<section id="accessibility">
+  <h2 id="accessibility-heading">Accessibility</h2>
 
-      <section id="a11y-reduced-motion">
-        <h3 id="a11y-reduced-motion-heading">
-          Reduced Motion and Motion Sensitivity
-        </h3>
-        <p>
-          Host Environments <em class="rfc2119">MUST</em> provide a way to
-          propagate a user’s <dfn>reduced motion preference</dfn> (or
-          equivalent) into the scroll engine.
-        </p>
-        <p>
-          When a reduced motion preference is active:
-        </p>
-        <ul>
-          <li>
-            Programmatic scroll operations
-            <em class="rfc2119">SHOULD</em> be implemented as immediate position
-            changes without animation, or use significantly simplified and
-            shortened motion.
-          </li>
-          <li>
-            Long-running or continuous auto-scrolling behaviors
-            <em class="rfc2119">SHOULD</em> be disabled, minimized, or replaced
-            with non-animated alternatives.
-          </li>
-        </ul>
-        <p>
-          Regardless of motion preferences, the scroll engine
-          <em class="rfc2119">MUST</em> allow ongoing motion to be interrupted
-          and overridden by user input.
-        </p>
-      </section>
+  <section id="a11y-principles">
+    <h3 id="a11y-principles-heading">General Principles</h3>
+    <p>
+      A conforming Scroll Engine Implementation and its Host Environment
+      <em class="rfc2119">MUST</em> support accessible scrolling
+      experiences. This includes:
+    </p>
+    <ul>
+      <li>
+        Ensuring that the user remains in control of scroll motion, and that
+        user input can override programmatic motion, including motion
+        initiated by scroll programs.
+      </li>
+      <li>
+        Respecting platform accessibility settings, including preferences
+        for reduced motion or similar features.
+      </li>
+      <li>
+        Supporting keyboard, keypad, switch, and other assistive input as
+        first-class means of controlling scroll.
+      </li>
+      <li>
+        Avoiding motion that cannot be paused, stopped, or overridden by the
+        user.
+      </li>
+    </ul>
+  </section>
 
-      <section id="a11y-keyboard">
-        <h3 id="a11y-keyboard-heading">
-          Keyboard, Keypad, and Switch Input
-        </h3>
-        <p>
-          Host Environments <em class="rfc2119">MUST</em> be able to express
-          discrete navigation commands from devices such as keyboards, keypads,
-          gamepads, and switch controls as
-          <a href="#term-impulse">impulses</a> or scroll operations.
-        </p>
-        <p>
-          A Scroll Engine Implementation <em class="rfc2119">MUST</em>:
-        </p>
-        <ul>
-          <li>
-            Accept these impulses in the same way as pointer-based input (such
-            as touch or wheel events).
-          </li>
-          <li>
-            Produce predictable movements in response to such input, according
-            to the host environment’s conventions (for example, line stepping
-            for arrow keys, page stepping for PageUp/PageDown).
-          </li>
-        </ul>
-        <p>
-          Continuous motion initiated programmatically
-          <em class="rfc2119">MUST</em> be interruptible by keyboard or
-          assistive input. A user action
-          <em class="rfc2119">SHOULD</em> promptly adjust the target or current
-          position to reflect the user’s intent.
-        </p>
-      </section>
+  <section id="a11y-reduced-motion">
+    <h3 id="a11y-reduced-motion-heading">
+      Reduced Motion and Motion Sensitivity
+    </h3>
+    <p>
+      Host Environments <em class="rfc2119">MUST</em> provide a way to
+      propagate a user’s <dfn>reduced motion preference</dfn> (or
+      equivalent) into the scroll engine.
+    </p>
+    <p>
+      When a reduced motion preference is active:
+    </p>
+    <ul>
+      <li>
+        Programmatic scroll operations
+        <em class="rfc2119">SHOULD</em> be implemented as immediate position
+        changes without animation, or use significantly simplified and
+        shortened motion.
+      </li>
+      <li>
+        Long-running or continuous auto-scrolling behaviors
+        <em class="rfc2119">SHOULD</em> be disabled, minimized, or replaced
+        with non-animated alternatives.
+      </li>
+      <li>
+        Scroll programs <em class="rfc2119">SHOULD</em> respect the reduced
+        motion preference when coordinating scroll with other effects.
+      </li>
+    </ul>
+    <p>
+      Regardless of motion preferences, the scroll engine
+      <em class="rfc2119">MUST</em> allow ongoing motion to be interrupted
+      and overridden by user input.
+    </p>
+  </section>
 
-      <section id="a11y-focus-tabbing">
-        <h3 id="a11y-focus-tabbing-heading">
-          Focus Navigation and Tabbing
-        </h3>
-        <p>
-          When a focusable item becomes focused (for example, via Tab/Shift+Tab
-          or other accessibility navigation commands), the Host Environment
-          <em class="rfc2119">MAY</em> request a scroll operation to bring the
-          focused item into view.
-        </p>
-        <p>
-          A Scroll Engine Implementation <em class="rfc2119">MUST</em>:
-        </p>
-        <ul>
-          <li>
-            Support such focus-driven adjustments as regular scroll operations,
-            using the same domain and motion semantics.
-          </li>
-          <li>
-            Avoid trapping focus by repeatedly re-scrolling in a way that
-            prevents the user from moving focus away.
-          </li>
-        </ul>
-        <p>
-          In circular domains, engines
-          <em class="rfc2119">MUST NOT</em> induce repeated loops in response to
-          focus changes unless explicitly requested by the Host Environment.
-        </p>
-      </section>
+  <section id="a11y-keyboard">
+    <h3 id="a11y-keyboard-heading">
+      Keyboard, Keypad, and Switch Input
+    </h3>
+    <p>
+      Host Environments <em class="rfc2119">MUST</em> be able to express
+      discrete navigation commands from devices such as keyboards, keypads,
+      gamepads, and switch controls as
+      <a href="#term-impulse">impulses</a> or scroll operations.
+    </p>
+    <p>
+      A Scroll Engine Implementation <em class="rfc2119">MUST</em>:
+    </p>
+    <ul>
+      <li>
+        Accept these impulses in the same way as pointer-based input (such
+        as touch or wheel events).
+      </li>
+      <li>
+        Produce predictable movements in response to such input, according
+        to the host environment’s conventions (for example, line stepping
+        for arrow keys, page stepping for PageUp/PageDown).
+      </li>
+    </ul>
+    <p>
+      Continuous motion initiated programmatically
+      <em class="rfc2119">MUST</em> be interruptible by keyboard or
+      assistive input. A user action
+      <em class="rfc2119">SHOULD</em> promptly adjust the target or current
+      position to reflect the user’s intent, even when scroll programs are
+      active.
+    </p>
+  </section>
 
-      <section id="a11y-user-override">
-        <h3 id="a11y-user-override-heading">
-          User Override and Priority of User Input
-        </h3>
-        <p>
-          When user-originated input conflicts with ongoing programmatic
-          motion, user input <em class="rfc2119">MUST</em> take precedence.
-        </p>
-        <p>
-          A Scroll Engine Implementation <em class="rfc2119">MUST</em>:
-        </p>
-        <ul>
-          <li>
-            Allow user impulses to override or modify the current target
-            position.
-          </li>
-          <li>
-            Stop, pause, or alter ongoing motion accordingly, rather than
-            ignoring user attempts to stop or reverse the motion.
-          </li>
-        </ul>
-        <p>
-          Engines <em class="rfc2119">MUST NOT</em> create non-cancelable,
-          non-interruptible scroll loops that continue in spite of user input
-          intended to stop or reverse them.
-        </p>
-      </section>
+  <section id="a11y-focus-tabbing">
+    <h3 id="a11y-focus-tabbing-heading">
+      Focus Navigation and Tabbing
+    </h3>
+    <p>
+      When a focusable item becomes focused (for example, via Tab/Shift+Tab
+      or other accessibility navigation commands), the Host Environment
+      <em class="rfc2119">MAY</em> request a scroll operation to bring the
+      focused item into view.
+    </p>
+    <p>
+      A Scroll Engine Implementation <em class="rfc2119">MUST</em>:
+    </p>
+    <ul>
+      <li>
+        Support such focus-driven adjustments as regular scroll operations,
+        using the same domain and motion semantics.
+      </li>
+      <li>
+        Avoid trapping focus by repeatedly re-scrolling in a way that
+        prevents the user from moving focus away.
+      </li>
+    </ul>
+    <p>
+      In circular domains, engines
+      <em class="rfc2119">MUST NOT</em> induce repeated loops in response to
+      focus changes unless explicitly requested by the Host Environment.
+    </p>
+  </section>
 
-      <section id="a11y-platform-integration" class="informative">
-        <h3 id="a11y-platform-integration-heading">
-          Platform Accessibility Integration (informative)
-        </h3>
-        <p class="note">
-          While this specification is host-agnostic, conforming Host
-          Environments are expected to integrate the scroll engine with their
-          native accessibility frameworks:
-        </p>
-        <ul>
-          <li>
-            Web platforms can use features such as
-            <code>prefers-reduced-motion</code>, ARIA practices, and keyboard
-            focus management to drive scroll behavior.
-          </li>
-          <li>
-            Android platforms can integrate with accessibility services, focus
-            navigation, and key event handling.
-          </li>
-          <li>
-            iOS platforms can integrate with UIAccessibility settings,
-            VoiceOver, and focus navigation mechanisms.
-          </li>
-        </ul>
-        <p>
-          In all cases, the principles defined in this section
-          <em class="rfc2119">SHOULD</em> be preserved.
-        </p>
-      </section>
-    </section>
+  <section id="a11y-user-override">
+    <h3 id="a11y-user-override-heading">
+      User Override and Priority of User Input
+    </h3>
+    <p>
+      When user-originated input conflicts with ongoing programmatic
+      motion, user input <em class="rfc2119">MUST</em> take precedence.
+    </p>
+    <p>
+      A Scroll Engine Implementation <em class="rfc2119">MUST</em>:
+    </p>
+    <ul>
+      <li>
+        Allow user impulses to override or modify the current target
+        position.
+      </li>
+      <li>
+        Stop, pause, or alter ongoing motion accordingly, rather than
+        ignoring user attempts to stop or reverse the motion.
+      </li>
+    </ul>
+    <p>
+      Engines <em class="rfc2119">MUST NOT</em> create non-cancelable,
+      non-interruptible scroll loops that continue in spite of user input
+      intended to stop or reverse them, including loops initiated or
+      extended by scroll programs.
+    </p>
+  </section>
 
-    <section id="architecture" class="informative">
-      <h2 id="architecture-heading">Architecture Overview (informative)</h2>
-      <p class="note">
-        This section is non-normative and describes the conceptual roles and
-        interactions of components in a scroll engine implementation.
-      </p>
+  <section id="a11y-platform-integration" class="informative">
+    <h3 id="a11y-platform-integration-heading">
+      Platform Accessibility Integration (informative)
+    </h3>
+    <p class="note">
+      While this specification is host-agnostic, conforming Host
+      Environments are expected to integrate the scroll engine with their
+      native accessibility frameworks:
+    </p>
+    <ul>
+      <li>
+        Web platforms can use features such as
+        <code>prefers-reduced-motion</code>, ARIA practices, and keyboard
+        focus management to drive scroll behavior and scroll programs.
+      </li>
+      <li>
+        Android platforms can integrate with accessibility services, focus
+        navigation, and key event handling.
+      </li>
+      <li>
+        iOS platforms can integrate with UIAccessibility settings,
+        VoiceOver, and focus navigation mechanisms.
+      </li>
+    </ul>
+    <p>
+      In all cases, the principles defined in this section
+      <em class="rfc2119">SHOULD</em> be preserved.
+    </p>
+  </section>
+</section>
 
-      <section id="arch-components">
-        <h3 id="arch-components-heading">Component Roles</h3>
-        <p>
-          A typical system based on this specification includes the following
-          conceptual components:
-        </p>
-        <ul>
-          <li>
-            A <dfn>Scroll Engine</dfn>, which maintains the scroll axis state as
-            described in <a href="#data-model">Data Model</a>, accepts
-            <a href="#term-scroll-operation">scroll operations</a> and
-            <a href="#term-impulse">impulses</a>, and updates positions over
-            time according to a motion policy.
-          </li>
-          <li>
-            A <dfn>Scroll Surface</dfn>, a host-defined entity whose visible
-            content changes in response to scroll position (for example, a DOM
-            element, native scroll view, or camera).
-          </li>
-          <li>
-            A <dfn>Motion Policy</dfn>, which defines how positions evolve over
-            time from current to target (for example, instantaneous jumps,
-            exponential easing, fixed-duration animations).
-          </li>
-          <li>
-            A <dfn>Scheduler</dfn>, which provides a notion of frames or time
-            steps for the scroll engine (for example, display refresh, game
-            loop, or timer-based updates).
-          </li>
-          <li>
-            A set of <dfn>Input Sources</dfn>, which translate host-specific
-            input events (pointer, keyboard, accessibility commands, etc.) into
-            <a href="#term-impulse">impulses</a>.
-          </li>
-          <li>
-            A <dfn>Persistence Layer</dfn>, which reads and writes
-            <a href="#data-snapshot">Scroll State Snapshots</a> to storage
-            appropriate for the Host Environment.
-          </li>
-        </ul>
-      </section>
+<section id="architecture" class="informative">
+  <h2 id="architecture-heading">Architecture Overview (informative)</h2>
+  <p class="note">
+    This section is non-normative and describes the conceptual roles and
+    interactions of components in a programmable scroll engine
+    implementation.
+  </p>
 
-      <section id="arch-flow">
-        <h3 id="arch-flow-heading">Execution Flow (Conceptual)</h3>
-        <p>
-          The high-level execution flow in a system based on this model is:
-        </p>
-        <ol>
-          <li>
-            User input is received by the Host Environment and translated into
-            impulses or scroll operations.
-          </li>
-          <li>
-            The Scroll Engine updates its internal state and computes a new
-            canonical position according to the active motion policy and scroll
-            domain.
-          </li>
-          <li>
-            The new canonical position is applied to the Scroll Surface using
-            host-specific mechanisms (for example, DOM scroll offsets or
-            native view properties).
-          </li>
-          <li>
-            The Scroll Engine notifies observers (such as applications or
-            persistence modules) via its observable mechanisms.
-          </li>
-          <li>
-            Persistence modules, if present, record snapshots of scroll state at
-            appropriate times.
-          </li>
-        </ol>
-        <p>
-          Programmatic scroll operations follow a similar flow, except that the
-          initial request originates from application code rather than user
-          input.
-        </p>
-        <p>
-          At all times, user input
-          <em class="rfc2119">MUST</em> be able to override programmatic
-          motion, as detailed in <a href="#accessibility">Accessibility</a>.
-        </p>
-      </section>
-    </section>
+  <section id="arch-components">
+    <h3 id="arch-components-heading">Component Roles</h3>
+    <p>
+      A typical system based on this specification includes the following
+      conceptual components:
+    </p>
+    <ul>
+      <li>
+        A <dfn>Scroll Engine</dfn>, which maintains the scroll axis state as
+        described in <a href="#data-model">Data Model</a>, accepts
+        <a href="#term-scroll-operation">scroll operations</a> and
+        <a href="#term-impulse">impulses</a>, and updates positions over
+        time according to a <a href="#term-motion-policy">motion policy</a>.
+      </li>
+      <li>
+        A <dfn>Scroll Surface</dfn>, a host-defined entity whose visible
+        content changes in response to scroll position (for example, a DOM
+        element, native scroll view, or camera).
+      </li>
+      <li>
+        A <dfn>Motion Policy</dfn>, which defines how positions evolve over
+        time from current to target (for example, instantaneous jumps,
+        exponential easing, fixed-duration transitions). Motion policies can
+        be selected or replaced under the control of scroll programs or
+        host code.
+      </li>
+      <li>
+        A <dfn>Scheduler</dfn>, which provides a notion of frames or time
+        steps for the scroll engine (for example, display refresh, game
+        loop, or timer-based updates).
+      </li>
+      <li>
+        A set of <dfn>Input Sources</dfn>, which translate host-specific
+        input events (pointer, keyboard, accessibility commands, etc.) into
+        <a href="#term-impulse">impulses</a>.
+      </li>
+      <li>
+        A collection of <dfn>Scroll Programs</dfn>, which attach to the
+        engine’s extension points to implement custom behavior, such as
+        snapping, scroll-linked effects, or application-specific rules.
+      </li>
+      <li>
+        A <dfn>Persistence Layer</dfn>, which reads and writes
+        <a href="#data-snapshot">Scroll State Snapshots</a> to storage
+        appropriate for the Host Environment.
+      </li>
+    </ul>
+  </section>
 
-    <section id="persistence" class="informative">
-      <h2 id="persistence-heading">
-        Session Persistence Module (informative)
-      </h2>
-      <p class="note">
-        This section is non-normative and describes a typical pattern for
-        preserving scroll position across navigations or app sessions using
-        <a href="#data-snapshot">Scroll State Snapshots</a>.
-      </p>
+  <section id="arch-flow">
+    <h3 id="arch-flow-heading">Execution Flow (Conceptual)</h3>
+    <p>
+      The high-level execution flow in a system based on this model is:
+    </p>
+    <ol>
+      <li>
+        User input is received by the Host Environment and translated into
+        impulses or scroll operations.
+      </li>
+      <li>
+        The Scroll Engine updates its internal state and computes a new
+        canonical position according to the active scroll domain and motion
+        policy, possibly after transformation of impulses or targets by
+        scroll programs.
+      </li>
+      <li>
+        The new canonical position is applied to the Scroll Surface using
+        host-specific mechanisms (for example, DOM scroll offsets or
+        native view properties).
+      </li>
+      <li>
+        The Scroll Engine notifies observers (such as applications, scroll
+        programs, or persistence modules) via its observable mechanisms.
+      </li>
+      <li>
+        Persistence modules, if present, record snapshots of scroll state at
+        appropriate times.
+      </li>
+    </ol>
+    <p>
+      Programmatic scroll operations follow a similar flow, except that the
+      initial request originates from application code or a scroll program
+      rather than user input.
+    </p>
+    <p>
+      At all times, user input
+      <em class="rfc2119">MUST</em> be able to override programmatic
+      motion, as detailed in <a href="#accessibility">Accessibility</a>.
+    </p>
+  </section>
+</section>
 
-      <section id="persistence-goals">
-        <h3 id="persistence-goals-heading">Goals</h3>
-        <p>
-          A session persistence module aims to preserve scroll position across:
-        </p>
-        <ul>
-          <li>navigations or screen transitions within an application,</li>
-          <li>lifecycle events such as backgrounding and foregrounding,</li>
-          <li>and other host-defined session boundaries.</li>
-        </ul>
-        <p>
-          The module uses Scroll State Snapshots to capture and restore
-          positions in a deterministic manner.
-        </p>
-      </section>
+<section id="persistence" class="informative">
+  <h2 id="persistence-heading">
+    Session Persistence Module (informative)
+  </h2>
+  <p class="note">
+    This section is non-normative and describes a typical pattern for
+    preserving scroll position across navigations or app sessions using
+    <a href="#data-snapshot">Scroll State Snapshots</a>.
+  </p>
 
-      <section id="persistence-semantics">
-        <h3 id="persistence-semantics-heading">Persistence Semantics</h3>
-        <p>
-          A typical persistence module:
-        </p>
-        <ul>
-          <li>
-            Observes scroll state via the engine’s observable mechanisms and
-            periodically or event-driven captures a Scroll State Snapshot.
-          </li>
-          <li>
-            Stores the snapshot in a host-defined storage mechanism, such as web
-            session storage, local storage, Android bundles, or platform-specific
-            state restoration APIs.
-          </li>
-          <li>
-            On startup or appropriate lifecycle events, reads any previously
-            stored snapshot and applies the stored canonical position as the
-            initial position for the scroll engine.
-          </li>
-        </ul>
-      </section>
+  <section id="persistence-goals">
+    <h3 id="persistence-goals-heading">Goals</h3>
+    <p>
+      A session persistence module aims to preserve scroll position across:
+    </p>
+    <ul>
+      <li>navigations or screen transitions within an application,</li>
+      <li>lifecycle events such as backgrounding and foregrounding,</li>
+      <li>and other host-defined session boundaries.</li>
+    </ul>
+    <p>
+      The module uses Scroll State Snapshots to capture and restore
+      positions in a deterministic manner.
+    </p>
+  </section>
 
-      <section id="persistence-restore">
-        <h3 id="persistence-restore-heading">Restore Strategies</h3>
-        <p>Two broad restore strategies are common:</p>
-        <ul>
-          <li>
-            <dfn>Immediate restore</dfn>: the position is seeded before the user
-            sees the content (for example, before the first frame).
-          </li>
-          <li>
-            <dfn>Deferred restore</dfn>: the position is seeded after a
-            host-defined condition such as layout stability or a timeout.
-          </li>
-        </ul>
-        <p>
-          Host Environments should choose a strategy that provides a stable and
-          predictable experience, while also respecting user preferences such as
-          reduced motion (see <a href="#a11y-reduced-motion">Reduced Motion and
-          Motion Sensitivity</a>).
-        </p>
-      </section>
+  <section id="persistence-semantics">
+    <h3 id="persistence-semantics-heading">Persistence Semantics</h3>
+    <p>
+      A typical persistence module:
+    </p>
+    <ul>
+      <li>
+        Observes scroll state via the engine’s observable mechanisms and
+        periodically or event-driven captures a Scroll State Snapshot.
+      </li>
+      <li>
+        Stores the snapshot in a host-defined storage mechanism, such as web
+        session storage, local storage, Android bundles, or platform-specific
+        state restoration APIs.
+      </li>
+      <li>
+        On startup or appropriate lifecycle events, reads any previously
+        stored snapshot and applies the stored canonical position as the
+        initial position for the scroll engine.
+      </li>
+    </ul>
+  </section>
 
-      <section id="persistence-host-profiles">
-        <h3 id="persistence-host-profiles-heading">
-          Host-Specific Profiles
-        </h3>
-        <p class="note">
-          The following examples are illustrative and not exhaustive.
-        </p>
-        <ul>
-          <li>
-            <strong>Web profile</strong>: storage using session-scoped storage
-            keyed by URL or route identifier; lifecycle linked to events such as
-            <code>pageshow</code> and <code>visibilitychange</code>, and
-            navigation APIs.
-          </li>
-          <li>
-            <strong>Android profile</strong>: storage using activity or fragment
-            state, view models, or other Android persistence mechanisms;
-            lifecycle linked to methods such as
-            <code>onSaveInstanceState</code>, <code>onPause</code>, and
-            <code>onResume</code>.
-          </li>
-          <li>
-            <strong>iOS profile</strong>: storage using state restoration APIs
-            or custom persistence; lifecycle linked to controller and scene
-            lifecycle events.
-          </li>
-        </ul>
-      </section>
+  <section id="persistence-restore">
+    <h3 id="persistence-restore-heading">Restore Strategies</h3>
+    <p>Two broad restore strategies are common:</p>
+    <ul>
+      <li>
+        <dfn>Immediate restore</dfn>: the position is seeded before the user
+        sees the content (for example, before the first frame).
+      </li>
+      <li>
+        <dfn>Deferred restore</dfn>: the position is seeded after a
+        host-defined condition such as layout stability or a timeout.
+      </li>
+    </ul>
+    <p>
+      Host Environments should choose a strategy that provides a stable and
+      predictable experience, while also respecting user preferences such as
+      reduced motion (see <a href="#a11y-reduced-motion">Reduced Motion and
+      Motion Sensitivity</a>).
+    </p>
+  </section>
 
-      <section id="persistence-privacy">
-        <h3 id="persistence-privacy-heading">
-          Privacy and Security Considerations
-        </h3>
-        <p>
-          Persistence modules should respect host privacy settings and user
-          expectations around session boundaries. Implementations should handle
-          cases where storage is unavailable or restricted by falling back to
-          non-persistent behavior without compromising correctness.
-        </p>
-      </section>
-    </section>
+  <section id="persistence-host-profiles">
+    <h3 id="persistence-host-profiles-heading">
+      Host-Specific Profiles
+    </h3>
+    <p class="note">
+      The following examples are illustrative and not exhaustive.
+    </p>
+    <ul>
+      <li>
+        <strong>Web profile</strong>: storage using session-scoped storage
+        keyed by URL or route identifier; lifecycle linked to events such as
+        <code>pageshow</code> and <code>visibilitychange</code>, and
+        navigation APIs.
+      </li>
+      <li>
+        <strong>Android profile</strong>: storage using activity or fragment
+        state, view models, or other Android persistence mechanisms;
+        lifecycle linked to methods such as
+        <code>onSaveInstanceState</code>, <code>onPause</code>, and
+        <code>onResume</code>.
+      </li>
+      <li>
+        <strong>iOS profile</strong>: storage using state restoration APIs
+        or custom persistence; lifecycle linked to controller and scene
+        lifecycle events.
+      </li>
+    </ul>
+  </section>
 
-    <section id="integration" class="informative">
-      <h2 id="integration-heading">
-        Integration with Host Platforms (informative)
-      </h2>
-      <p class="note">
-        This section sketches how the abstract model can be integrated into
-        different environments. It does not define normative bindings.
-      </p>
+  <section id="persistence-privacy">
+    <h3 id="persistence-privacy-heading">
+      Privacy and Security Considerations
+    </h3>
+    <p>
+      Persistence modules should respect host privacy settings and user
+      expectations around session boundaries. Implementations should handle
+      cases where storage is unavailable or restricted by falling back to
+      non-persistent behavior without compromising correctness.
+    </p>
+  </section>
+</section>
 
-      <section id="integration-web">
-        <h3 id="integration-web-heading">Web Browsers</h3>
-        <p>
-          In web environments, scroll surfaces typically correspond to the
-          window or individual scrollable DOM elements. Canonical positions map
-          naturally to scroll offsets (such as <code>scrollTop</code> and
-          <code>scrollLeft</code>).
-        </p>
-        <p>
-          Circular domains may be implemented via content duplication,
-          virtualization, or logical repositioning while maintaining consistent
-          canonical positions.
-        </p>
-        <p>
-          Persistence is often implemented via session-scoped storage and
-          integration with history and lifecycle events.
-        </p>
-      </section>
+<section id="integration" class="informative">
+  <h2 id="integration-heading">
+    Integration with Host Platforms (informative)
+  </h2>
+  <p class="note">
+    This section sketches how the abstract model can be integrated into
+    different environments. It does not define normative bindings.
+  </p>
 
-      <section id="integration-android">
-        <h3 id="integration-android-heading">Android</h3>
-        <p>
-          On Android, scroll surfaces can include <code>ScrollView</code>,
-          <code>RecyclerView</code>, and custom <code>View</code> classes.
-          Canonical positions may correspond to pixel offsets, item indices, or
-          other host-defined units.
-        </p>
-        <p>
-          End-unbounded and circular domains may be implemented via virtualized
-          lists, repeating adapters, or logical index wrapping while preserving
-          the semantics defined in this specification.
-        </p>
-        <p>
-          Persistence can be integrated with activity and fragment lifecycles,
-          view models, or application-level storage.
-        </p>
-      </section>
+  <section id="integration-web">
+    <h3 id="integration-web-heading">Web Browsers</h3>
+    <p>
+      In web environments, scroll surfaces typically correspond to the
+      window or individual scrollable DOM elements. Canonical positions map
+      naturally to scroll offsets (such as <code>scrollTop</code> and
+      <code>scrollLeft</code>).
+    </p>
+    <p>
+      Circular domains may be implemented via content duplication,
+      virtualization, or logical repositioning while maintaining consistent
+      canonical positions.
+    </p>
+    <p>
+      Programmable hooks may be exposed using JavaScript events, reactive
+      primitives, or other mechanisms, and may coordinate scroll with other
+      web platform features such as style updates or media control without
+      redefining or replacing native animation APIs.
+    </p>
+    <p>
+      Persistence is often implemented via session-scoped storage and
+      integration with history and lifecycle events.
+    </p>
+  </section>
 
-      <section id="integration-ios">
-        <h3 id="integration-ios-heading">iOS</h3>
-        <p>
-          On iOS, scroll surfaces can include <code>UIScrollView</code>,
-          <code>UICollectionView</code>, <code>UITableView</code>, and related
-          components. Canonical positions typically map to
-          <code>contentOffset</code> or index-based offsets.
-        </p>
-        <p>
-          Circular and unbounded domains can be implemented using content
-          repetition, logical index arithmetic, or other techniques that
-          preserve canonical positions.
-        </p>
-        <p>
-          Persistence can be achieved through state restoration APIs, custom
-          storage, or app-specific mechanisms.
-        </p>
-      </section>
+  <section id="integration-android">
+    <h3 id="integration-android-heading">Android</h3>
+    <p>
+      On Android, scroll surfaces can include <code>ScrollView</code>,
+      <code>RecyclerView</code>, and custom <code>View</code> classes.
+      Canonical positions may correspond to pixel offsets, item indices, or
+      other host-defined units.
+    </p>
+    <p>
+      End-unbounded and circular domains may be implemented via virtualized
+      lists, repeating adapters, or logical index wrapping while preserving
+      the semantics defined in this specification.
+    </p>
+    <p>
+      Programmable hooks may be exposed via listener interfaces,
+      callback-based APIs, or reactive streams, allowing application code
+      to implement scroll programs in a platform-native style.
+    </p>
+    <p>
+      Persistence can be integrated with activity and fragment lifecycles,
+      view models, or application-level storage.
+    </p>
+  </section>
 
-      <section id="integration-other">
-        <h3 id="integration-other-heading">Other Host Environments</h3>
-        <p>
-          Other environments, such as game engines or desktop UI toolkits, can
-          integrate the Scroll Engine Model by mapping canonical positions to
-          camera transforms, viewport positions, or equivalent constructs.
-        </p>
-        <p>
-          The principles of scroll domains, observable state, accessibility, and
-          persistence defined in this specification still apply.
-        </p>
-      </section>
-    </section>
+  <section id="integration-ios">
+    <h3 id="integration-ios-heading">iOS</h3>
+    <p>
+      On iOS, scroll surfaces can include <code>UIScrollView</code>,
+      <code>UICollectionView</code>, <code>UITableView</code>, and related
+      components. Canonical positions typically map to
+      <code>contentOffset</code> or index-based offsets.
+    </p>
+    <p>
+      Circular and unbounded domains can be implemented using content
+      repetition, logical index arithmetic, or other techniques that
+      preserve canonical positions.
+    </p>
+    <p>
+      Programmable hooks may be exposed via delegate protocols, closures,
+      or reactive frameworks, enabling scroll programs to coordinate scroll
+      with other application behavior.
+    </p>
+    <p>
+      Persistence can be achieved through state restoration APIs, custom
+      storage, or app-specific mechanisms.
+    </p>
+  </section>
+
+  <section id="integration-other">
+    <h3 id="integration-other-heading">Other Host Environments</h3>
+    <p>
+      Other environments, such as game engines or desktop UI toolkits, can
+      integrate the Programmable Scroll Engine Model by mapping canonical
+      positions to camera transforms, viewport positions, or equivalent
+      constructs.
+    </p>
+    <p>
+      Programmable hooks may be realized through scripting systems, event
+      buses, or engine-specific callback mechanisms. The principles of
+      scroll domains, observable state, programmability, accessibility, and
+      persistence defined in this specification still apply.
+    </p>
+  </section>
+</section>
